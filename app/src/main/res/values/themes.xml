@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Back2Me" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primaryBlue</item>
+        <item name="colorPrimaryDark">@color/primaryBlueDark</item>
+        <item name="colorAccent">@color/accentBlue</item>
+
+        <item name="android:colorBackground">@color/backgroundColor</item>
+        <item name="colorSurface">@color/cardBackground</item>
+
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textSecondary</item>
+        <item name="android:textColorHint">@color/textHint</item>
+
+        <item name="android:statusBarColor">@color/primaryBlue</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- ❌ DO NOT add Theme.Back2Me.Splash here -->
+
+</resources>

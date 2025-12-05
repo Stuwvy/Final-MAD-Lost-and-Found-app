@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Back2Me</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">Find What\'s Lost, Return What\'s Found</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Login to your Account</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_in">Log in</string>
+    <string name="or_sign_in_with">Or sign in with</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="sign_up">Sign up</string>
+
+    <!-- Signup Screen -->
+    <string name="signup_title">Create your Account</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="or_sign_up_with">Or sign up with</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_in_link">Sign in</string>
+
+    <!-- Main Screen -->
+    <string name="last_7_days">Last 7 days</string>
+    <string name="more_than_7_days">More than 7 days ago</string>
+    <string name="more">More…</string>
+    <string name="phone">Phone</string>
+    <string name="on_street_at_rupp">On street at Rupp</string>
+    <string name="search">Search</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_add">Add</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Error Messages -->
+    <string name="error_empty_email">Please enter your email</string>
+    <string name="error_invalid_email">Please enter a valid email</string>
+    <string name="error_empty_password">Please enter your password</string>
+    <string name="error_short_password">Password must be at least 6 characters</string>
+    <string name="error_passwords_not_match">Passwords do not match</string>
+
+    <!-- Success Messages -->
+    <string name="login_success">Login successful!</string>
+    <string name="signup_success">Account created successfully!</string>
+    <string name="signout_success">Signed out successfully</string>
+</resources>

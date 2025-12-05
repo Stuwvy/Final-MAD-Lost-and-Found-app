@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "208277752706",
+    "project_id": "back2me-4ea6e",
+    "storage_bucket": "back2me-4ea6e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:208277752706:android:40c0498f2d2f1b0f4b1d9b",
+        "android_client_info": {
+          "package_name": "com.example.back2me"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwxG8B40IfCdPsUXywFuy5mQzSML3wt-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

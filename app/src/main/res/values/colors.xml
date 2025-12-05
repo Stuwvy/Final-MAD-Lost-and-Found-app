@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+
+    <!-- Back2Me Primary Colors (Blue theme from design) -->
+    <color name="primaryBlue">#1E3A8A</color>
+    <color name="primaryBlueDark">#172554</color>
+    <color name="accentBlue">#3B82F6</color>
+    <color name="lightBlue">#DBEAFE</color>
+
+    <!-- Background Colors -->
+    <color name="backgroundColor">#F8FAFC</color>
+    <color name="cardBackground">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="textPrimary">#1F2937</color>
+    <color name="textSecondary">#6B7280</color>
+    <color name="textHint">#9CA3AF</color>
+
+    <!-- Social Button Colors -->
+    <color name="googleRed">#EA4335</color>
+    <color name="facebookBlue">#1877F2</color>
+    <color name="twitterBlue">#1DA1F2</color>
+
+    <!-- Item Card Colors -->
+    <color name="darkGreen">#0F3D3E</color>
+    <color name="itemTextColor">#FFFFFF</color>
+</resources>
