@@ -5,23 +5,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemViewHolder> {
 
     private final List<Item> items;
-    private final OnItemClickListener onItemClick;
+    private final OnItemClickListener onItemClickListener;
 
+    // Click listener interface
     public interface OnItemClickListener {
         void onItemClick(Item item);
     }
 
-    public ItemGridAdapter(List<Item> items, OnItemClickListener onItemClick) {
+    public ItemGridAdapter(List<Item> items, OnItemClickListener listener) {
         this.items = items;
-        this.onItemClick = onItemClick;
+        this.onItemClickListener = listener;
     }
 
     @NonNull
@@ -48,11 +52,14 @@ public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemVi
                     .error(R.drawable.item_card_background)
                     .into(holder.itemImage);
         } else {
-            // Show default background if no image
             holder.itemImage.setBackgroundResource(R.drawable.item_card_background);
         }
 
-        holder.itemView.setOnClickListener(v -> onItemClick.onItemClick(item));
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(item);
+            }
+        });
     }
 
     @Override
@@ -60,16 +67,16 @@ public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemVi
         return items.size();
     }
 
-    static class ItemViewHolder extends RecyclerView.ViewHolder {
+    public static class ItemViewHolder extends RecyclerView.ViewHolder {
         ImageView itemImage;
         TextView itemName;
         TextView itemLocation;
 
-        ItemViewHolder(View view) {
-            super(view);
-            itemImage = view.findViewById(R.id.item_image);
-            itemName = view.findViewById(R.id.text_item_name);
-            itemLocation = view.findViewById(R.id.text_item_location);
+        public ItemViewHolder(@NonNull View itemView) {
+            super(itemView);
+            itemImage = itemView.findViewById(R.id.item_image);
+            itemName = itemView.findViewById(R.id.text_item_name);
+            itemLocation = itemView.findViewById(R.id.text_item_location);
         }
     }
 }

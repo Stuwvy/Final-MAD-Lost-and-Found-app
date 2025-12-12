@@ -5,9 +5,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -17,22 +21,23 @@ import java.util.TimeZone;
 public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemViewHolder> {
 
     private final List<Item> items;
-    private final OnItemClickListener onItemClick;
-    private final SimpleDateFormat dateFormat;
-    private final SimpleDateFormat timeFormat;
+    private final OnItemClickListener onItemClickListener;
+
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
     private final SimpleDateFormat isoFormat;
 
+    // Click listener interface
     public interface OnItemClickListener {
         void onItemClick(Item item);
     }
 
-    public ItemListAdapter(List<Item> items, OnItemClickListener onItemClick) {
+    public ItemListAdapter(List<Item> items, OnItemClickListener listener) {
         this.items = items;
-        this.onItemClick = onItemClick;
-        this.dateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
-        this.timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-        this.isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        this.isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        this.onItemClickListener = listener;
+
+        isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     @NonNull
@@ -59,7 +64,6 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
                     .error(R.drawable.item_card_background)
                     .into(holder.itemImage);
         } else {
-            // Show default background if no image
             holder.itemImage.setBackgroundResource(R.drawable.item_card_background);
         }
 
@@ -73,12 +77,16 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
                 holder.itemTime.setText("N/A");
                 holder.itemDate.setText("N/A");
             }
-        } catch (Exception e) {
+        } catch (ParseException e) {
             holder.itemTime.setText("N/A");
             holder.itemDate.setText("N/A");
         }
 
-        holder.itemView.setOnClickListener(v -> onItemClick.onItemClick(item));
+        holder.itemView.setOnClickListener(v -> {
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(item);
+            }
+        });
     }
 
     @Override
@@ -86,20 +94,20 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
         return items.size();
     }
 
-    static class ItemViewHolder extends RecyclerView.ViewHolder {
+    public static class ItemViewHolder extends RecyclerView.ViewHolder {
         ImageView itemImage;
         TextView itemName;
         TextView itemLocation;
         TextView itemTime;
         TextView itemDate;
 
-        ItemViewHolder(View view) {
-            super(view);
-            itemImage = view.findViewById(R.id.item_image);
-            itemName = view.findViewById(R.id.text_item_name);
-            itemLocation = view.findViewById(R.id.text_item_location);
-            itemTime = view.findViewById(R.id.text_item_time);
-            itemDate = view.findViewById(R.id.text_item_date);
+        public ItemViewHolder(@NonNull View itemView) {
+            super(itemView);
+            itemImage = itemView.findViewById(R.id.item_image);
+            itemName = itemView.findViewById(R.id.text_item_name);
+            itemLocation = itemView.findViewById(R.id.text_item_location);
+            itemTime = itemView.findViewById(R.id.text_item_time);
+            itemDate = itemView.findViewById(R.id.text_item_date);
         }
     }
 }

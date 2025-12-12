@@ -43,7 +43,6 @@
             android:name=".MainActivity"
             android:exported="false"/>
 
-        <!-- ✅ ADD THIS: AddEditItemActivity was missing -->
         <activity
             android:name=".AddEditItemActivity"
             android:exported="false"
@@ -56,6 +55,39 @@
         <activity
             android:name=".ItemDetailActivity"
             android:exported="false" />
+
+        <!-- ✅ NEW: SearchActivity -->
+        <activity
+            android:name=".SearchActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- ✅ NEW: MyItemsActivity -->
+        <activity
+            android:name=".MyItemsActivity"
+            android:exported="false" />
+
+        <!-- ✅ NEW: EditItemActivity -->
+        <activity
+            android:name=".EditItemActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- ✅ NEW: ClaimsActivity -->
+        <activity
+            android:name=".ClaimsActivity"
+            android:exported="false" />
+
+        <!-- ✅ NEW: ConversationsActivity -->
+        <activity
+            android:name=".ConversationsActivity"
+            android:exported="false" />
+
+        <!-- ✅ NEW: ChatActivity -->
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

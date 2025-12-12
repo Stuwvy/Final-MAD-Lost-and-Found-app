@@ -3,13 +3,16 @@ package com.example.back2me;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.back2me.auth.LoginActivity;
 import com.example.back2me.databinding.ActivityProfileBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import java.util.stream.Collectors;
+
+import java.util.List;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -39,16 +42,15 @@ public class ProfileActivity extends AppCompatActivity {
             binding.textUserEmail.setText(email != null ? email : "No email");
 
             // Set initials for profile picture
-            String nameForInitials = displayName != null ? displayName :
-                    (email != null ? email : "U");
-            String[] parts = nameForInitials.split(" ");
+            String source = displayName != null ? displayName : (email != null ? email : "U");
             StringBuilder initials = new StringBuilder();
-            for (int i = 0; i < Math.min(parts.length, 2); i++) {
-                if (parts[i].length() > 0) {
-                    initials.append(parts[i].charAt(0));
+            String[] parts = source.split(" ");
+            for (String part : parts) {
+                if (!part.isEmpty() && initials.length() < 2) {
+                    initials.append(Character.toUpperCase(part.charAt(0)));
                 }
             }
-            binding.textProfileInitials.setText(initials.toString().toUpperCase());
+            binding.textProfileInitials.setText(initials.toString());
         }
     }
 
@@ -56,8 +58,13 @@ public class ProfileActivity extends AppCompatActivity {
         binding.backButton.setOnClickListener(v -> finish());
 
         binding.cardMyItems.setOnClickListener(v -> {
-            Toast.makeText(this, "My Items clicked", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to MyItemsActivity
+            Intent intent = new Intent(this, MyItemsActivity.class);
+            startActivity(intent);
+        });
+
+        binding.cardMessages.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ConversationsActivity.class);
+            startActivity(intent);
         });
 
         binding.cardSettings.setOnClickListener(v -> {
@@ -73,34 +80,42 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserStats() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) return;
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) return;
 
-        String userId = user.getUid();
+        String userId = currentUser.getUid();
 
-        ItemRepository.getAllItems().thenAccept(allItems -> {
-            runOnUiThread(() -> {
-                long myItemsCount = allItems.stream()
-                        .filter(item -> userId.equals(item.getCreatedBy()))
-                        .count();
+        ItemRepository.getAllItems(new ItemRepository.ItemsCallback() {
+            @Override
+            public void onSuccess(List<Item> allItems) {
+                int totalItems = 0;
+                int lostItems = 0;
+                int foundItems = 0;
 
-                long lostItems = allItems.stream()
-                        .filter(item -> userId.equals(item.getCreatedBy()) &&
-                                "lost".equals(item.getStatus()))
-                        .count();
+                for (Item item : allItems) {
+                    if (userId.equals(item.getCreatedBy())) {
+                        totalItems++;
+                        if ("lost".equals(item.getStatus())) {
+                            lostItems++;
+                        } else if ("found".equals(item.getStatus())) {
+                            foundItems++;
+                        }
+                    }
+                }
 
-                long foundItems = allItems.stream()
-                        .filter(item -> userId.equals(item.getCreatedBy()) &&
-                                "found".equals(item.getStatus()))
-                        .count();
-
-                binding.textTotalItems.setText(String.valueOf(myItemsCount));
+                binding.textTotalItems.setText(String.valueOf(totalItems));
                 binding.textLostItems.setText(String.valueOf(lostItems));
                 binding.textFoundItems.setText(String.valueOf(foundItems));
-            });
-        }).exceptionally(e -> {
-            e.printStackTrace();
-            return null;
+            }
+
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+                // Set default values on error
+                binding.textTotalItems.setText("0");
+                binding.textLostItems.setText("0");
+                binding.textFoundItems.setText("0");
+            }
         });
     }
 

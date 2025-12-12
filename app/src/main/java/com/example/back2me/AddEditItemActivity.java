@@ -10,15 +10,18 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+
 import com.example.back2me.databinding.ActivityAddEditItemBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -29,13 +32,39 @@ import java.util.UUID;
 public class AddEditItemActivity extends AppCompatActivity {
 
     private ActivityAddEditItemBinding binding;
-    private Calendar selectedDate;
-    private Uri selectedImageUri;
+    private Calendar selectedDate = Calendar.getInstance();
+    private Uri selectedImageUri = null;
     private String uploadedImageUrl = "";
 
-    private ActivityResultLauncher<Void> cameraLauncher;
-    private ActivityResultLauncher<String> galleryLauncher;
-    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    // Camera launcher
+    private final ActivityResultLauncher<Void> cameraLauncher =
+            registerForActivityResult(new ActivityResultContracts.TakePicturePreview(), bitmap -> {
+                if (bitmap != null) {
+                    displayImage(bitmap);
+                }
+            });
+
+    // Gallery launcher
+    private final ActivityResultLauncher<String> galleryLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    selectedImageUri = uri;
+                    binding.imagePreview.setImageURI(uri);
+                    binding.imagePreview.setVisibility(View.VISIBLE);
+                    binding.uploadPrompt.setVisibility(View.GONE);
+                    binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
+                }
+            });
+
+    // Permission launcher
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    openCamera();
+                } else {
+                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,49 +72,8 @@ public class AddEditItemActivity extends AppCompatActivity {
         binding = ActivityAddEditItemBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        selectedDate = Calendar.getInstance();
-
-        setupActivityResultLaunchers();
         setupClickListeners();
         setDefaultDateTime();
-    }
-
-    private void setupActivityResultLaunchers() {
-        // Camera launcher
-        cameraLauncher = registerForActivityResult(
-                new ActivityResultContracts.TakePicturePreview(),
-                bitmap -> {
-                    if (bitmap != null) {
-                        displayImage(bitmap);
-                    }
-                }
-        );
-
-        // Gallery launcher
-        galleryLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        selectedImageUri = uri;
-                        binding.imagePreview.setImageURI(uri);
-                        binding.imagePreview.setVisibility(View.VISIBLE);
-                        binding.uploadPrompt.setVisibility(View.GONE);
-                        binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
-                    }
-                }
-        );
-
-        // Permission launcher
-        cameraPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        openCamera();
-                    } else {
-                        Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
     }
 
     private void setupClickListeners() {
@@ -97,7 +85,7 @@ public class AddEditItemActivity extends AppCompatActivity {
         binding.inputDate.setOnClickListener(v -> showDatePicker());
         binding.inputTime.setOnClickListener(v -> showTimePicker());
 
-        // Photo actions
+        // Photo actions - Show dialog when clicking photo card
         binding.photoCard.setOnClickListener(v -> showPhotoOptionsDialog());
         binding.buttonRemovePhoto.setOnClickListener(v -> removePhoto());
     }
@@ -109,9 +97,9 @@ public class AddEditItemActivity extends AppCompatActivity {
                 .setTitle("Add Photo")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
-                        checkCameraPermissionAndOpen();
-                    } else if (which == 1) {
-                        galleryLauncher.launch("image/*");
+                        checkCameraPermissionAndOpen(); // Camera
+                    } else {
+                        galleryLauncher.launch("image/*"); // Gallery
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -173,14 +161,14 @@ public class AddEditItemActivity extends AppCompatActivity {
         binding.uploadPrompt.setVisibility(View.GONE);
         binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
 
+        // Convert bitmap to URI for upload
         selectedImageUri = getImageUriFromBitmap(bitmap);
     }
 
     private Uri getImageUriFromBitmap(Bitmap bitmap) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(
-                getContentResolver(), bitmap, "Item_Photo", null);
+        String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Item_Photo", null);
         return Uri.parse(path);
     }
 
@@ -204,8 +192,9 @@ public class AddEditItemActivity extends AppCompatActivity {
             return;
         }
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ?
-                FirebaseAuth.getInstance().getCurrentUser().getUid() : "anonymous";
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : "anonymous";
 
         // Convert selected date to ISO format
         SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
@@ -215,76 +204,64 @@ public class AddEditItemActivity extends AppCompatActivity {
         binding.buttonSaveItem.setEnabled(false);
         binding.buttonSaveItem.setText("Posting...");
 
-        // Upload image if selected
+        // Upload image if selected, then create item
         if (selectedImageUri != null) {
             uploadImageToFirebase(selectedImageUri, imageUrl -> {
-                if (imageUrl != null) {
-                    uploadedImageUrl = imageUrl;
-                }
-                createAndSubmitItem(name, location, description, status, userId, createdDate);
+                uploadedImageUrl = imageUrl != null ? imageUrl : "";
+                createItemInFirestore(name, location, description, status, userId, createdDate);
             });
         } else {
-            createAndSubmitItem(name, location, description, status, userId, createdDate);
+            createItemInFirestore(name, location, description, status, userId, createdDate);
         }
     }
 
-    private void createAndSubmitItem(String name, String location, String description,
-                                     String status, String userId, String createdDate) {
-        Item newItem = new Item("", name, location, description, status,
-                userId, createdDate, uploadedImageUrl);
+    private void createItemInFirestore(String name, String location, String description,
+                                       String status, String userId, String createdDate) {
+        Item newItem = new Item(name, location, description, status, userId, createdDate, uploadedImageUrl);
 
-        ItemRepository.createItem(newItem).thenAccept(result -> {
-            runOnUiThread(() -> {
+        ItemRepository.createItem(newItem, new ItemRepository.CreateCallback() {
+            @Override
+            public void onSuccess(Item item) {
                 binding.buttonSaveItem.setEnabled(true);
                 binding.buttonSaveItem.setText("Submit");
 
-                if (result.isSuccess()) {
-                    Toast.makeText(this, "Item posted successfully!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                } else {
-                    String errorMsg = result.getException() != null ?
-                            result.getException().getMessage() : "Unknown error";
-                    Toast.makeText(this, "Failed to post item: " + errorMsg,
-                            Toast.LENGTH_LONG).show();
-                }
-            });
-        }).exceptionally(e -> {
-            runOnUiThread(() -> {
+                Toast.makeText(AddEditItemActivity.this, "Item posted successfully!", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
+                finish();
+            }
+
+            @Override
+            public void onError(Exception e) {
                 binding.buttonSaveItem.setEnabled(true);
                 binding.buttonSaveItem.setText("Submit");
-                Toast.makeText(this, "Failed to post item: " + e.getMessage(),
-                        Toast.LENGTH_LONG).show();
-            });
-            return null;
+
+                Toast.makeText(AddEditItemActivity.this,
+                        "Failed to post item: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
         });
     }
 
-    private void uploadImageToFirebase(Uri imageUri, ImageUploadCallback callback) {
-        try {
-            StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-            StorageReference imageRef = storageRef.child("item_images/" + UUID.randomUUID() + ".jpg");
+    private void uploadImageToFirebase(Uri imageUri, OnImageUploadListener listener) {
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        StorageReference imageRef = storageRef.child("item_images/" + UUID.randomUUID().toString() + ".jpg");
 
-            imageRef.putFile(imageUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        imageRef.getDownloadUrl()
-                                .addOnSuccessListener(uri -> callback.onComplete(uri.toString()))
-                                .addOnFailureListener(e -> {
-                                    e.printStackTrace();
-                                    callback.onComplete(null);
-                                });
-                    })
-                    .addOnFailureListener(e -> {
-                        e.printStackTrace();
-                        callback.onComplete(null);
-                    });
-        } catch (Exception e) {
-            e.printStackTrace();
-            callback.onComplete(null);
-        }
+        imageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    imageRef.getDownloadUrl()
+                            .addOnSuccessListener(uri -> listener.onUploadComplete(uri.toString()))
+                            .addOnFailureListener(e -> {
+                                e.printStackTrace();
+                                listener.onUploadComplete(null);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    e.printStackTrace();
+                    listener.onUploadComplete(null);
+                });
     }
 
-    private interface ImageUploadCallback {
-        void onComplete(String imageUrl);
+    // Interface for image upload callback
+    private interface OnImageUploadListener {
+        void onUploadComplete(String imageUrl);
     }
 }
