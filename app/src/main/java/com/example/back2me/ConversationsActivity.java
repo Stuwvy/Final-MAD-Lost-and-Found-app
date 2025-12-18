@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.back2me.databinding.ActivityConversationsBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +23,9 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
     private ActivityConversationsBinding binding;
     private ConversationsAdapter adapter;
     private List<Conversation> conversations = new ArrayList<>();
+
     private FirebaseAuth auth;
     private String currentUserId;
-    private ListenerRegistration conversationsListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,15 +34,15 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();
-        FirebaseUser currentUser = auth.getCurrentUser();
+        FirebaseUser user = auth.getCurrentUser();
 
-        if (currentUser == null) {
+        if (user == null) {
             Toast.makeText(this, R.string.please_login, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        currentUserId = currentUser.getUid();
+        currentUserId = user.getUid();
 
         setupUI();
         setupRecyclerView();
@@ -52,13 +51,7 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
     @Override
     protected void onResume() {
         super.onResume();
-        startListeningToConversations();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        stopListeningToConversations();
+        loadConversations();
     }
 
     private void setupUI() {
@@ -71,39 +64,34 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
         binding.recyclerConversations.setAdapter(adapter);
     }
 
-    private void startListeningToConversations() {
+    private void loadConversations() {
         binding.progressBar.setVisibility(View.VISIBLE);
+        binding.layoutEmptyState.setVisibility(View.GONE);
 
-        conversationsListener = ChatRepository.listenToConversations(currentUserId,
-                new ChatRepository.ConversationsCallback() {
-                    @Override
-                    public void onSuccess(List<Conversation> conversationsList) {
-                        binding.progressBar.setVisibility(View.GONE);
+        ChatRepository.getConversationsForUser(currentUserId, new ChatRepository.ConversationsCallback() {
+            @Override
+            public void onSuccess(List<Conversation> conversationsList) {
+                binding.progressBar.setVisibility(View.GONE);
 
-                        conversations.clear();
-                        conversations.addAll(conversationsList);
-                        adapter.notifyDataSetChanged();
+                conversations.clear();
+                conversations.addAll(conversationsList);
+                adapter.notifyDataSetChanged();
 
-                        updateEmptyState();
-                    }
+                updateEmptyState();
 
-                    @Override
-                    public void onError(Exception e) {
-                        binding.progressBar.setVisibility(View.GONE);
-                        Log.e(TAG, "Error loading conversations", e);
-                        Toast.makeText(ConversationsActivity.this,
-                                R.string.error_loading_conversations,
-                                Toast.LENGTH_SHORT).show();
-                        updateEmptyState();
-                    }
-                });
-    }
+                Log.d(TAG, "Loaded " + conversationsList.size() + " conversations");
+            }
 
-    private void stopListeningToConversations() {
-        if (conversationsListener != null) {
-            conversationsListener.remove();
-            conversationsListener = null;
-        }
+            @Override
+            public void onError(Exception e) {
+                binding.progressBar.setVisibility(View.GONE);
+                Log.e(TAG, "Error loading conversations", e);
+                Toast.makeText(ConversationsActivity.this,
+                        R.string.error_loading_conversations,
+                        Toast.LENGTH_SHORT).show();
+                updateEmptyState();
+            }
+        });
     }
 
     private void updateEmptyState() {
@@ -120,9 +108,10 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
     public void onConversationClick(Conversation conversation) {
         Intent intent = new Intent(this, ChatActivity.class);
         intent.putExtra("CONVERSATION_ID", conversation.getId());
-        intent.putExtra("OTHER_USER_NAME", conversation.getOtherParticipantName(currentUserId));
-        intent.putExtra("OTHER_USER_ID", conversation.getOtherParticipantId(currentUserId));
+        intent.putExtra("OTHER_USER_NAME", conversation.getOtherUserName(currentUserId));
+        intent.putExtra("OTHER_USER_ID", conversation.getOtherUserId(currentUserId));
         intent.putExtra("ITEM_NAME", conversation.getItemName());
+        intent.putExtra("ITEM_ID", conversation.getItemId());
         startActivity(intent);
     }
 }

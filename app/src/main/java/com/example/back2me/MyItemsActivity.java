@@ -2,12 +2,9 @@ package com.example.back2me;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,20 +18,10 @@ import java.util.List;
 
 public class MyItemsActivity extends AppCompatActivity implements MyItemsAdapter.OnItemActionListener {
 
-    private static final String TAG = "MyItemsActivity";
-
     private ActivityMyItemsBinding binding;
-    private MyItemsAdapter adapter;
-    private List<Item> myItems = new ArrayList<>();
     private FirebaseAuth auth;
-
-    private final ActivityResultLauncher<Intent> editItemLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    loadMyItems(); // Reload after edit
-                    Toast.makeText(this, "Item updated!", Toast.LENGTH_SHORT).show();
-                }
-            });
+    private MyItemsAdapter adapter;
+    private List<Item> items = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,58 +31,49 @@ public class MyItemsActivity extends AppCompatActivity implements MyItemsAdapter
 
         auth = FirebaseAuth.getInstance();
 
+        setupUI();
         setupRecyclerView();
-        setupClickListeners();
-        loadMyItems();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadItems();
+    }
+
+    private void setupUI() {
+        binding.backButton.setOnClickListener(v -> finish());
     }
 
     private void setupRecyclerView() {
-        adapter = new MyItemsAdapter(myItems, this);
+        adapter = new MyItemsAdapter(items, this);
         binding.recyclerMyItems.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerMyItems.setAdapter(adapter);
     }
 
-    private void setupClickListeners() {
-        binding.backButton.setOnClickListener(v -> finish());
-
-        binding.fabAddItem.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AddEditItemActivity.class);
-            editItemLauncher.launch(intent);
-        });
-    }
-
-    private void loadMyItems() {
-        FirebaseUser currentUser = auth.getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
+    private void loadItems() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
             finish();
             return;
         }
 
-        String userId = currentUser.getUid();
-
         binding.progressBar.setVisibility(View.VISIBLE);
         binding.layoutEmptyState.setVisibility(View.GONE);
-        binding.recyclerMyItems.setVisibility(View.GONE);
 
-        ItemRepository.getItemsByUser(userId, new ItemRepository.ItemsCallback() {
+        ItemRepository.getItemsByUser(user.getUid(), new ItemRepository.ItemsCallback() {
             @Override
-            public void onSuccess(List<Item> items) {
+            public void onSuccess(List<Item> itemList) {
                 binding.progressBar.setVisibility(View.GONE);
-
-                myItems.clear();
-                myItems.addAll(items);
+                items.clear();
+                items.addAll(itemList);
                 adapter.notifyDataSetChanged();
-
                 updateEmptyState();
-
-                Log.d(TAG, "Loaded " + items.size() + " items for user");
             }
 
             @Override
             public void onError(Exception e) {
                 binding.progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error loading items", e);
                 Toast.makeText(MyItemsActivity.this,
                         "Error loading items: " + e.getMessage(),
                         Toast.LENGTH_LONG).show();
@@ -105,7 +83,7 @@ public class MyItemsActivity extends AppCompatActivity implements MyItemsAdapter
     }
 
     private void updateEmptyState() {
-        if (myItems.isEmpty()) {
+        if (items.isEmpty()) {
             binding.recyclerMyItems.setVisibility(View.GONE);
             binding.layoutEmptyState.setVisibility(View.VISIBLE);
         } else {
@@ -113,8 +91,6 @@ public class MyItemsActivity extends AppCompatActivity implements MyItemsAdapter
             binding.layoutEmptyState.setVisibility(View.GONE);
         }
     }
-
-    // ============== Item Action Callbacks ==============
 
     @Override
     public void onItemClick(Item item) {
@@ -127,70 +103,76 @@ public class MyItemsActivity extends AppCompatActivity implements MyItemsAdapter
     public void onEditClick(Item item) {
         Intent intent = new Intent(this, EditItemActivity.class);
         intent.putExtra("ITEM_ID", item.getId());
-        editItemLauncher.launch(intent);
+        startActivity(intent);
     }
 
     @Override
     public void onDeleteClick(Item item) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete Item")
-                .setMessage("Are you sure you want to delete \"" + item.getName() + "\"?")
-                .setPositiveButton("Delete", (dialog, which) -> deleteItem(item))
-                .setNegativeButton("Cancel", null)
+                .setTitle(R.string.delete_item)
+                .setMessage(R.string.delete_item_confirmation)
+                .setPositiveButton(R.string.delete, (dialog, which) -> deleteItem(item))
+                .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    @Override
+    public void onViewClaimsClick(Item item) {
+        Intent intent = new Intent(this, ClaimsActivity.class);
+        intent.putExtra("ITEM_ID", item.getId());
+        intent.putExtra("ITEM_NAME", item.getName());
+        startActivity(intent);
     }
 
     @Override
     public void onMarkResolvedClick(Item item) {
         new AlertDialog.Builder(this)
-                .setTitle("Mark as Resolved")
-                .setMessage("Mark \"" + item.getName() + "\" as resolved/returned?")
-                .setPositiveButton("Yes", (dialog, which) -> markAsResolved(item))
-                .setNegativeButton("Cancel", null)
+                .setTitle(R.string.mark_resolved)
+                .setMessage(R.string.mark_resolved_confirmation)
+                .setPositiveButton(R.string.yes, (dialog, which) -> markAsResolved(item))
+                .setNegativeButton(R.string.no, null)
                 .show();
     }
 
     private void deleteItem(Item item) {
-        ItemRepository.deleteItem(item.getId(), new ItemRepository.OperationCallback() {
+        binding.progressBar.setVisibility(View.VISIBLE);
+
+        ItemRepository.deleteItem(item.getId(), new ItemRepository.DeleteCallback() {
             @Override
             public void onSuccess() {
-                Toast.makeText(MyItemsActivity.this, "Item deleted", Toast.LENGTH_SHORT).show();
-                loadMyItems(); // Reload list
+                binding.progressBar.setVisibility(View.GONE);
+                Toast.makeText(MyItemsActivity.this, R.string.item_deleted, Toast.LENGTH_SHORT).show();
+                loadItems();
             }
 
             @Override
             public void onError(Exception e) {
+                binding.progressBar.setVisibility(View.GONE);
                 Toast.makeText(MyItemsActivity.this,
-                        "Failed to delete: " + e.getMessage(),
+                        "Error deleting item: " + e.getMessage(),
                         Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private void markAsResolved(Item item) {
-        // Create updated item with "resolved" status
-        Item updatedItem = new Item(
-                item.getId(),
-                item.getName(),
-                item.getLocation(),
-                item.getDescription(),
-                "resolved",  // Change status to resolved
-                item.getCreatedBy(),
-                item.getCreatedDate(),
-                item.getImageUrl()
-        );
+        binding.progressBar.setVisibility(View.VISIBLE);
 
-        ItemRepository.updateItem(item.getId(), updatedItem, new ItemRepository.OperationCallback() {
+        item.setStatus("resolved");
+
+        ItemRepository.updateItem(item, new ItemRepository.UpdateCallback() {
             @Override
             public void onSuccess() {
-                Toast.makeText(MyItemsActivity.this, "Item marked as resolved!", Toast.LENGTH_SHORT).show();
-                loadMyItems(); // Reload list
+                binding.progressBar.setVisibility(View.GONE);
+                Toast.makeText(MyItemsActivity.this, R.string.item_marked_resolved, Toast.LENGTH_SHORT).show();
+                loadItems();
             }
 
             @Override
             public void onError(Exception e) {
+                binding.progressBar.setVisibility(View.GONE);
                 Toast.makeText(MyItemsActivity.this,
-                        "Failed to update: " + e.getMessage(),
+                        "Error updating item: " + e.getMessage(),
                         Toast.LENGTH_LONG).show();
             }
         });

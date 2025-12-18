@@ -15,12 +15,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.ListenerRegistration;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -37,6 +33,7 @@ public class ChatActivity extends AppCompatActivity {
     private String otherUserName;
     private String otherUserId;
     private String itemName;
+    private String itemId;
 
     private ListenerRegistration messagesListener;
 
@@ -66,11 +63,11 @@ public class ChatActivity extends AppCompatActivity {
         otherUserName = getIntent().getStringExtra("OTHER_USER_NAME");
         otherUserId = getIntent().getStringExtra("OTHER_USER_ID");
         itemName = getIntent().getStringExtra("ITEM_NAME");
+        itemId = getIntent().getStringExtra("ITEM_ID");
 
         if (conversationId == null || conversationId.isEmpty()) {
             // Need to create a new conversation
-            String itemId = getIntent().getStringExtra("ITEM_ID");
-            createNewConversation(itemId);
+            createNewConversation();
         } else {
             setupUI();
             setupRecyclerView();
@@ -78,18 +75,25 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
-    private void createNewConversation(String itemId) {
+    private void createNewConversation() {
+        if (otherUserId == null || otherUserId.isEmpty()) {
+            Toast.makeText(this, "Cannot start conversation", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         binding.progressBar.setVisibility(View.VISIBLE);
 
-        ChatRepository.findOrCreateConversation(
+        ChatRepository.getOrCreateConversation(
                 currentUserId, currentUserName,
-                otherUserId, otherUserName,
-                itemId, itemName,
-                new ChatRepository.StringCallback() {
+                otherUserId, otherUserName != null ? otherUserName : "User",
+                itemId != null ? itemId : "",
+                itemName != null ? itemName : "",
+                new ChatRepository.ConversationCallback() {
                     @Override
-                    public void onSuccess(String newConversationId) {
+                    public void onSuccess(Conversation conversation) {
                         binding.progressBar.setVisibility(View.GONE);
-                        conversationId = newConversationId;
+                        conversationId = conversation.getId();
                         setupUI();
                         setupRecyclerView();
                         startListeningToMessages();
@@ -118,7 +122,6 @@ public class ChatActivity extends AppCompatActivity {
         super.onResume();
         if (conversationId != null && !conversationId.isEmpty()) {
             startListeningToMessages();
-            ChatRepository.markMessagesAsRead(conversationId, currentUserId);
         }
     }
 
@@ -126,7 +129,7 @@ public class ChatActivity extends AppCompatActivity {
         binding.backButton.setOnClickListener(v -> finish());
 
         // Set header info
-        binding.textUserName.setText(otherUserName);
+        binding.textUserName.setText(otherUserName != null ? otherUserName : "User");
 
         if (itemName != null && !itemName.isEmpty()) {
             binding.textItemName.setText(getString(R.string.regarding_item, itemName));
@@ -138,6 +141,8 @@ public class ChatActivity extends AppCompatActivity {
         // Set avatar initial
         if (otherUserName != null && !otherUserName.isEmpty()) {
             binding.textAvatar.setText(String.valueOf(otherUserName.charAt(0)).toUpperCase());
+        } else {
+            binding.textAvatar.setText("U");
         }
 
         // Send button state
@@ -219,32 +224,26 @@ public class ChatActivity extends AppCompatActivity {
         String text = binding.editMessage.getText().toString().trim();
         if (text.isEmpty()) return;
 
-        // Create timestamp
-        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String timestamp = isoFormat.format(new Date());
-
-        Message message = new Message(currentUserId, currentUserName, text, timestamp);
-
         // Clear input immediately
         binding.editMessage.setText("");
 
-        ChatRepository.sendMessage(conversationId, message, new ChatRepository.MessageCallback() {
-            @Override
-            public void onSuccess(Message sentMessage) {
-                // Message will appear via listener
-                Log.d(TAG, "Message sent successfully");
-            }
+        ChatRepository.sendMessage(conversationId, currentUserId, currentUserName, text,
+                new ChatRepository.OperationCallback() {
+                    @Override
+                    public void onSuccess() {
+                        // Message will appear via listener
+                        Log.d(TAG, "Message sent successfully");
+                    }
 
-            @Override
-            public void onError(Exception e) {
-                Log.e(TAG, "Error sending message", e);
-                Toast.makeText(ChatActivity.this,
-                        R.string.error_sending_message,
-                        Toast.LENGTH_SHORT).show();
-                // Restore the message text
-                binding.editMessage.setText(text);
-            }
-        });
+                    @Override
+                    public void onError(Exception e) {
+                        Log.e(TAG, "Error sending message", e);
+                        Toast.makeText(ChatActivity.this,
+                                R.string.error_sending_message,
+                                Toast.LENGTH_SHORT).show();
+                        // Restore the message text
+                        binding.editMessage.setText(text);
+                    }
+                });
     }
 }

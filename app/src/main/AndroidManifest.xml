@@ -21,6 +21,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Back2Me"
         tools:targetApi="31">
+        <!-- ADD THESE TO YOUR AndroidManifest.xml INSIDE <application> TAG -->
+
+        <activity
+            android:name=".MyClaimsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Back2Me" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Back2Me" />
 
         <!-- Splash Screen - ONLY ONE! -->
         <activity

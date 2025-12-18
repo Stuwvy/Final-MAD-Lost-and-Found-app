@@ -31,7 +31,7 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
     }
 
     public ConversationsAdapter(List<Conversation> conversations, String currentUserId,
-                                 OnConversationClickListener listener) {
+                                OnConversationClickListener listener) {
         this.conversations = conversations;
         this.currentUserId = currentUserId;
         this.listener = listener;
@@ -54,8 +54,8 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
     public void onBindViewHolder(@NonNull ConversationViewHolder holder, int position) {
         Conversation conversation = conversations.get(position);
 
-        // Set other participant's name
-        String otherName = conversation.getOtherParticipantName(currentUserId);
+        // Set other participant's name - using getOtherUserName instead of getOtherParticipantName
+        String otherName = conversation.getOtherUserName(currentUserId);
         holder.textUserName.setText(otherName);
 
         // Set avatar initial
@@ -77,13 +77,7 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
         // Set last message
         String lastMessage = conversation.getLastMessage();
         if (lastMessage != null && !lastMessage.isEmpty()) {
-            // Add "You: " prefix if current user sent the last message
-            if (currentUserId.equals(conversation.getLastSenderId())) {
-                holder.textLastMessage.setText(holder.itemView.getContext()
-                        .getString(R.string.you_prefix, lastMessage));
-            } else {
-                holder.textLastMessage.setText(lastMessage);
-            }
+            holder.textLastMessage.setText(lastMessage);
         } else {
             holder.textLastMessage.setText(R.string.no_messages_yet);
         }
@@ -91,15 +85,9 @@ public class ConversationsAdapter extends RecyclerView.Adapter<ConversationsAdap
         // Set timestamp
         holder.textTime.setText(formatTimestamp(conversation.getLastMessageTime()));
 
-        // Show unread indicator
-        int unreadCount = conversation.getUnreadCount();
-        if (unreadCount > 0 && !currentUserId.equals(conversation.getLastSenderId())) {
-            holder.viewUnreadIndicator.setVisibility(View.VISIBLE);
-            holder.textLastMessage.setAlpha(1.0f);
-        } else {
-            holder.viewUnreadIndicator.setVisibility(View.GONE);
-            holder.textLastMessage.setAlpha(0.7f);
-        }
+        // Hide unread indicator (simplified - no unread tracking)
+        holder.viewUnreadIndicator.setVisibility(View.GONE);
+        holder.textLastMessage.setAlpha(0.7f);
 
         // Click listener
         holder.itemView.setOnClickListener(v -> {

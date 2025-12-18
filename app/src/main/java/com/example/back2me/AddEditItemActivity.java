@@ -5,6 +5,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -19,15 +21,11 @@ import com.bumptech.glide.Glide;
 import com.example.back2me.databinding.ActivityAddEditItemBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
-import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.UUID;
 
 public class AddEditItemActivity extends AppCompatActivity {
 
@@ -35,22 +33,21 @@ public class AddEditItemActivity extends AppCompatActivity {
 
     private ActivityAddEditItemBinding binding;
     private FirebaseAuth auth;
-    private FirebaseStorage storage;
-    private StorageReference storageRef;
+    private Handler mainHandler;
 
     private String selectedStatus = "lost";
     private Uri selectedImageUri = null;
     private Bitmap selectedBitmap = null;
     private boolean isUploading = false;
 
-    // Camera launcher - captures bitmap directly
+    // Camera launcher
     private final ActivityResultLauncher<Void> cameraLauncher =
             registerForActivityResult(new ActivityResultContracts.TakePicturePreview(), bitmap -> {
                 if (bitmap != null) {
                     selectedBitmap = bitmap;
-                    selectedImageUri = null; // Clear URI, we'll use bitmap
+                    selectedImageUri = null;
                     displaySelectedImage(bitmap);
-                    Log.d(TAG, "Camera image captured as bitmap");
+                    Log.d(TAG, "Camera image captured");
                 }
             });
 
@@ -59,7 +56,7 @@ public class AddEditItemActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     selectedImageUri = uri;
-                    selectedBitmap = null; // Clear bitmap, we'll use URI
+                    selectedBitmap = null;
                     displaySelectedImage(uri);
                     Log.d(TAG, "Gallery image selected: " + uri);
                 }
@@ -82,8 +79,7 @@ public class AddEditItemActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();
-        storage = FirebaseStorage.getInstance();
-        storageRef = storage.getReference();
+        mainHandler = new Handler(Looper.getMainLooper());
 
         setupUI();
         setupClickListeners();
@@ -194,92 +190,66 @@ public class AddEditItemActivity extends AppCompatActivity {
 
         // Check if we have an image to upload
         if (selectedBitmap != null) {
-            // Upload bitmap from camera
-            uploadBitmapAndCreateItem(name, location, description, currentUser.getUid());
+            uploadBitmapToCloudinary(name, location, description, currentUser.getUid());
         } else if (selectedImageUri != null) {
-            // Upload URI from gallery
-            uploadUriAndCreateItem(name, location, description, currentUser.getUid());
+            uploadUriToCloudinary(name, location, description, currentUser.getUid());
         } else {
-            // No image, create item directly
             createItem(name, location, description, currentUser.getUid(), "");
         }
     }
 
-    private void uploadBitmapAndCreateItem(String name, String location, String description, String userId) {
+    private void uploadBitmapToCloudinary(String name, String location, String description, String userId) {
         isUploading = true;
-        String fileName = "item_images/" + UUID.randomUUID().toString() + ".jpg";
-        StorageReference imageRef = storageRef.child(fileName);
+        Log.d(TAG, "Uploading bitmap to Cloudinary...");
 
-        // Convert bitmap to bytes
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
-        byte[] data = baos.toByteArray();
+        CloudinaryHelper.uploadBitmap(selectedBitmap, new CloudinaryHelper.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    Log.d(TAG, "Cloudinary upload success: " + imageUrl);
+                    createItem(name, location, description, userId, imageUrl);
+                });
+            }
 
-        Log.d(TAG, "Uploading camera bitmap, size: " + data.length + " bytes");
-
-        imageRef.putBytes(data)
-                .addOnProgressListener(snapshot -> {
-                    double progress = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
-                    Log.d(TAG, "Upload progress: " + (int) progress + "%");
-                })
-                .addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "Bitmap uploaded successfully");
-                    imageRef.getDownloadUrl()
-                            .addOnSuccessListener(uri -> {
-                                String imageUrl = uri.toString();
-                                Log.d(TAG, "Download URL: " + imageUrl);
-                                isUploading = false;
-                                createItem(name, location, description, userId, imageUrl);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Failed to get download URL", e);
-                                isUploading = false;
-                                setLoading(false);
-                                Toast.makeText(this, "Failed to get image URL: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Bitmap upload failed", e);
+            @Override
+            public void onError(String errorMessage) {
+                mainHandler.post(() -> {
                     isUploading = false;
                     setLoading(false);
-                    Toast.makeText(this, "Failed to upload image: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Cloudinary upload error: " + errorMessage);
+                    Toast.makeText(AddEditItemActivity.this,
+                            "Failed to upload image: " + errorMessage, Toast.LENGTH_LONG).show();
                 });
+            }
+        });
     }
 
-    private void uploadUriAndCreateItem(String name, String location, String description, String userId) {
+    private void uploadUriToCloudinary(String name, String location, String description, String userId) {
         isUploading = true;
-        String fileName = "item_images/" + UUID.randomUUID().toString() + ".jpg";
-        StorageReference imageRef = storageRef.child(fileName);
+        Log.d(TAG, "Uploading URI to Cloudinary...");
 
-        Log.d(TAG, "Uploading gallery image: " + selectedImageUri);
+        CloudinaryHelper.uploadUri(this, selectedImageUri, new CloudinaryHelper.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    Log.d(TAG, "Cloudinary upload success: " + imageUrl);
+                    createItem(name, location, description, userId, imageUrl);
+                });
+            }
 
-        imageRef.putFile(selectedImageUri)
-                .addOnProgressListener(snapshot -> {
-                    double progress = (100.0 * snapshot.getBytesTransferred()) / snapshot.getTotalByteCount();
-                    Log.d(TAG, "Upload progress: " + (int) progress + "%");
-                })
-                .addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "URI uploaded successfully");
-                    imageRef.getDownloadUrl()
-                            .addOnSuccessListener(uri -> {
-                                String imageUrl = uri.toString();
-                                Log.d(TAG, "Download URL: " + imageUrl);
-                                isUploading = false;
-                                createItem(name, location, description, userId, imageUrl);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Failed to get download URL", e);
-                                isUploading = false;
-                                setLoading(false);
-                                Toast.makeText(this, "Failed to get image URL: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "URI upload failed", e);
+            @Override
+            public void onError(String errorMessage) {
+                mainHandler.post(() -> {
                     isUploading = false;
                     setLoading(false);
-                    Toast.makeText(this, "Failed to upload image: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Cloudinary upload error: " + errorMessage);
+                    Toast.makeText(AddEditItemActivity.this,
+                            "Failed to upload image: " + errorMessage, Toast.LENGTH_LONG).show();
                 });
+            }
+        });
     }
 
     private void createItem(String name, String location, String description,

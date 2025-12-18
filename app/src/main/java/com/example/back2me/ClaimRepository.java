@@ -1,19 +1,19 @@
 package com.example.back2me;
 
-import android.util.Log;
-
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ClaimRepository {
 
-    private static final String TAG = "ClaimRepository";
-    private static final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private static final String COLLECTION_NAME = "claims";
+    private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     // Callback interfaces
     public interface ClaimsCallback {
@@ -21,7 +21,7 @@ public class ClaimRepository {
         void onError(Exception e);
     }
 
-    public interface ClaimCallback {
+    public interface SingleClaimCallback {
         void onSuccess(Claim claim);
         void onError(Exception e);
     }
@@ -31,155 +31,132 @@ public class ClaimRepository {
         void onError(Exception e);
     }
 
-    public interface CreateCallback {
-        void onSuccess(Claim claim);
-        void onError(Exception e);
-    }
-
-    public interface ExistsCallback {
-        void onResult(boolean exists);
-        void onError(Exception e);
-    }
-
-    // Create new claim
-    public static void createClaim(Claim claim, CreateCallback callback) {
-        firestore.collection(COLLECTION_NAME)
-                .add(claim)
-                .addOnSuccessListener(documentReference -> {
-                    Claim createdClaim = claim.copyWithId(documentReference.getId());
-                    callback.onSuccess(createdClaim);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error creating claim", e);
-                    callback.onError(e);
-                });
-    }
-
-    // Get claims by item ID (for item owner to see who claimed)
+    // Get claims by item (sorted locally to avoid index requirement)
     public static void getClaimsByItem(String itemId, ClaimsCallback callback) {
-        firestore.collection(COLLECTION_NAME)
+        db.collection(COLLECTION_NAME)
                 .whereEqualTo("itemId", itemId)
-                .orderBy("createdDate", Query.Direction.DESCENDING)
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
+                .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Claim> claims = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        Claim claim = doc.toObject(Claim.class);
-                        if (claim != null) {
-                            claim.setId(doc.getId());
-                            claims.add(claim);
-                        }
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Claim claim = documentToClaim(document);
+                        claims.add(claim);
                     }
+                    // Sort locally by createdDate descending
+                    sortClaimsByDateDesc(claims);
                     callback.onSuccess(claims);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error getting claims by item", e);
-                    callback.onError(e);
-                });
+                .addOnFailureListener(callback::onError);
     }
 
-    // Get claims by owner ID (for owner to see all claims on their items)
-    public static void getClaimsByOwner(String ownerId, ClaimsCallback callback) {
-        firestore.collection(COLLECTION_NAME)
-                .whereEqualTo("ownerId", ownerId)
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<Claim> claims = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        Claim claim = doc.toObject(Claim.class);
-                        if (claim != null) {
-                            claim.setId(doc.getId());
-                            claims.add(claim);
-                        }
-                    }
-                    callback.onSuccess(claims);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error getting claims by owner", e);
-                    callback.onError(e);
-                });
-    }
-
-    // Get claims made by a user (claimer)
+    // Get claims by claimer (sorted locally)
     public static void getClaimsByClaimer(String claimerId, ClaimsCallback callback) {
-        firestore.collection(COLLECTION_NAME)
+        db.collection(COLLECTION_NAME)
                 .whereEqualTo("claimerId", claimerId)
-                .orderBy("createdDate", Query.Direction.DESCENDING)
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
+                .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Claim> claims = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        Claim claim = doc.toObject(Claim.class);
-                        if (claim != null) {
-                            claim.setId(doc.getId());
-                            claims.add(claim);
-                        }
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Claim claim = documentToClaim(document);
+                        claims.add(claim);
                     }
+                    // Sort locally
+                    sortClaimsByDateDesc(claims);
                     callback.onSuccess(claims);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error getting claims by claimer", e);
-                    callback.onError(e);
-                });
+                .addOnFailureListener(callback::onError);
     }
 
-    // Check if user already claimed an item
-    public static void hasUserClaimedItem(String itemId, String claimerId, ExistsCallback callback) {
-        firestore.collection(COLLECTION_NAME)
-                .whereEqualTo("itemId", itemId)
-                .whereEqualTo("claimerId", claimerId)
+    // Get claims by owner (sorted locally)
+    public static void getClaimsByOwner(String ownerId, ClaimsCallback callback) {
+        db.collection(COLLECTION_NAME)
+                .whereEqualTo("ownerId", ownerId)
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    callback.onResult(!querySnapshot.isEmpty());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Claim> claims = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Claim claim = documentToClaim(document);
+                        claims.add(claim);
+                    }
+                    // Sort locally
+                    sortClaimsByDateDesc(claims);
+                    callback.onSuccess(claims);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error checking claim", e);
-                    callback.onError(e);
-                });
+                .addOnFailureListener(callback::onError);
     }
 
-    // Update claim status (approve/reject)
-    public static void updateClaimStatus(String claimId, String newStatus, OperationCallback callback) {
-        firestore.collection(COLLECTION_NAME)
+    // Create claim
+    public static void createClaim(Claim claim, OperationCallback callback) {
+        Map<String, Object> claimData = claimToMap(claim);
+
+        db.collection(COLLECTION_NAME)
+                .add(claimData)
+                .addOnSuccessListener(documentReference -> {
+                    documentReference.update("id", documentReference.getId());
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(callback::onError);
+    }
+
+    // Update claim status
+    public static void updateClaimStatus(String claimId, String status, OperationCallback callback) {
+        db.collection(COLLECTION_NAME)
                 .document(claimId)
-                .update("status", newStatus)
+                .update("status", status)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error updating claim status", e);
-                    callback.onError(e);
-                });
+                .addOnFailureListener(callback::onError);
     }
 
     // Delete claim
     public static void deleteClaim(String claimId, OperationCallback callback) {
-        firestore.collection(COLLECTION_NAME)
+        db.collection(COLLECTION_NAME)
                 .document(claimId)
                 .delete()
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error deleting claim", e);
-                    callback.onError(e);
-                });
+                .addOnFailureListener(callback::onError);
     }
 
-    // Get pending claims count for owner
-    public static void getPendingClaimsCount(String ownerId, CountCallback callback) {
-        firestore.collection(COLLECTION_NAME)
-                .whereEqualTo("ownerId", ownerId)
-                .whereEqualTo("status", "pending")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    callback.onSuccess(querySnapshot.size());
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error getting pending claims count", e);
-                    callback.onError(e);
-                });
+    // Helper: Sort claims by date descending
+    private static void sortClaimsByDateDesc(List<Claim> claims) {
+        Collections.sort(claims, (c1, c2) -> {
+            String date1 = c1.getCreatedDate();
+            String date2 = c2.getCreatedDate();
+            if (date1 == null) date1 = "";
+            if (date2 == null) date2 = "";
+            return date2.compareTo(date1); // Descending
+        });
     }
 
-    public interface CountCallback {
-        void onSuccess(int count);
-        void onError(Exception e);
+    // Helper methods
+    private static Claim documentToClaim(DocumentSnapshot document) {
+        Claim claim = new Claim();
+        claim.setId(document.getId());
+        claim.setItemId(document.getString("itemId"));
+        claim.setItemName(document.getString("itemName"));
+        claim.setItemStatus(document.getString("itemStatus"));
+        claim.setClaimerId(document.getString("claimerId"));
+        claim.setClaimerName(document.getString("claimerName"));
+        claim.setClaimerEmail(document.getString("claimerEmail"));
+        claim.setOwnerId(document.getString("ownerId"));
+        claim.setMessage(document.getString("message"));
+        claim.setStatus(document.getString("status"));
+        claim.setCreatedDate(document.getString("createdDate"));
+        return claim;
+    }
+
+    private static Map<String, Object> claimToMap(Claim claim) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", claim.getId());
+        map.put("itemId", claim.getItemId());
+        map.put("itemName", claim.getItemName());
+        map.put("itemStatus", claim.getItemStatus());
+        map.put("claimerId", claim.getClaimerId());
+        map.put("claimerName", claim.getClaimerName());
+        map.put("claimerEmail", claim.getClaimerEmail());
+        map.put("ownerId", claim.getOwnerId());
+        map.put("message", claim.getMessage());
+        map.put("status", claim.getStatus());
+        map.put("createdDate", claim.getCreatedDate());
+        return map;
     }
 }

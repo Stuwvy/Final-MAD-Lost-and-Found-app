@@ -12,8 +12,6 @@ import com.example.back2me.databinding.ActivityProfileBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.List;
-
 public class ProfileActivity extends AppCompatActivity {
 
     private ActivityProfileBinding binding;
@@ -27,91 +25,115 @@ public class ProfileActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
 
-        setupUserInfo();
+        setupUI();
         setupClickListeners();
         loadUserStats();
     }
 
-    private void setupUserInfo() {
+    private void setupUI() {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
-            String displayName = user.getDisplayName();
             String email = user.getEmail();
+            binding.textEmail.setText(email);
 
-            binding.textUserName.setText(displayName != null ? displayName : "User");
-            binding.textUserEmail.setText(email != null ? email : "No email");
-
-            // Set initials for profile picture
-            String source = displayName != null ? displayName : (email != null ? email : "U");
-            StringBuilder initials = new StringBuilder();
-            String[] parts = source.split(" ");
-            for (String part : parts) {
-                if (!part.isEmpty() && initials.length() < 2) {
-                    initials.append(Character.toUpperCase(part.charAt(0)));
-                }
+            String name = user.getDisplayName();
+            if (name != null && !name.isEmpty()) {
+                binding.textName.setText(name);
+            } else if (email != null) {
+                binding.textName.setText(email.split("@")[0]);
             }
-            binding.textProfileInitials.setText(initials.toString());
         }
     }
 
     private void setupClickListeners() {
+        // Back button
         binding.backButton.setOnClickListener(v -> finish());
 
+        // My Items - Opens MyItemsActivity
         binding.cardMyItems.setOnClickListener(v -> {
-            Intent intent = new Intent(this, MyItemsActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, MyItemsActivity.class));
         });
 
+        // My Claims - Opens MyClaimsActivity
+        binding.cardMyClaims.setOnClickListener(v -> {
+            startActivity(new Intent(this, MyClaimsActivity.class));
+        });
+
+        // Messages - Opens ConversationsActivity
         binding.cardMessages.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ConversationsActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, ConversationsActivity.class));
         });
 
+        // Settings - Opens SettingsActivity
         binding.cardSettings.setOnClickListener(v -> {
-            Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
-            // TODO: Navigate to SettingsActivity
+            startActivity(new Intent(this, SettingsActivity.class));
         });
 
-        binding.cardAbout.setOnClickListener(v -> showAboutDialog());
+        // Help & Support
+        binding.cardHelp.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Help & Support")
+                    .setMessage("For help, please contact:\n\nsupport@back2me.com\n\nOr visit our FAQ section on the website.")
+                    .setPositiveButton("OK", null)
+                    .show();
+        });
 
-        binding.cardHelp.setOnClickListener(v -> showHelpDialog());
+        // About
+        binding.cardAbout.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("About Back2Me")
+                    .setMessage("Back2Me v1.0\n\nA Lost & Found app to help reunite people with their lost items.\n\nDeveloped for MAD Final Project 2025")
+                    .setPositiveButton("OK", null)
+                    .show();
+        });
 
-        binding.buttonLogout.setOnClickListener(v -> showLogoutConfirmation());
+        // Logout
+        binding.buttonLogout.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Logout")
+                    .setMessage("Are you sure you want to logout?")
+                    .setPositiveButton("Logout", (dialog, which) -> {
+                        auth.signOut();
+                        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, LoginActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
     }
 
     private void loadUserStats() {
-        FirebaseUser currentUser = auth.getCurrentUser();
-        if (currentUser == null) return;
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) return;
 
-        String userId = currentUser.getUid();
+        String userId = user.getUid();
 
-        ItemRepository.getAllItems(new ItemRepository.ItemsCallback() {
+        // Load user's items count
+        ItemRepository.getItemsByUser(userId, new ItemRepository.ItemsCallback() {
             @Override
-            public void onSuccess(List<Item> allItems) {
-                int totalItems = 0;
-                int lostItems = 0;
-                int foundItems = 0;
+            public void onSuccess(java.util.List<Item> items) {
+                int total = items.size();
+                int lost = 0;
+                int found = 0;
 
-                for (Item item : allItems) {
-                    if (userId.equals(item.getCreatedBy())) {
-                        totalItems++;
-                        if ("lost".equals(item.getStatus())) {
-                            lostItems++;
-                        } else if ("found".equals(item.getStatus())) {
-                            foundItems++;
-                        }
+                for (Item item : items) {
+                    if ("lost".equalsIgnoreCase(item.getStatus())) {
+                        lost++;
+                    } else if ("found".equalsIgnoreCase(item.getStatus())) {
+                        found++;
                     }
                 }
 
-                binding.textTotalItems.setText(String.valueOf(totalItems));
-                binding.textLostItems.setText(String.valueOf(lostItems));
-                binding.textFoundItems.setText(String.valueOf(foundItems));
+                binding.textTotalItems.setText(String.valueOf(total));
+                binding.textLostItems.setText(String.valueOf(lost));
+                binding.textFoundItems.setText(String.valueOf(found));
             }
 
             @Override
             public void onError(Exception e) {
-                e.printStackTrace();
-                // Set default values on error
                 binding.textTotalItems.setText("0");
                 binding.textLostItems.setText("0");
                 binding.textFoundItems.setText("0");
@@ -119,51 +141,9 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void showAboutDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("About Back2Me")
-                .setMessage("Back2Me - Lost & Found App\n\n" +
-                        "Version: 1.0.0\n\n" +
-                        "Help reunite people with their lost belongings and find items that have been found.\n\n" +
-                        "© 2025 Back2Me")
-                .setPositiveButton("OK", null)
-                .show();
-    }
-
-    private void showHelpDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Help & Support")
-                .setMessage("How to use Back2Me:\n\n" +
-                        "🔍 Post Lost Items:\n" +
-                        "- Tap the + button\n" +
-                        "- Select \"Lost\"\n" +
-                        "- Add details and photo\n\n" +
-                        "📍 Post Found Items:\n" +
-                        "- Tap the + button\n" +
-                        "- Select \"Found\"\n" +
-                        "- Add location and description\n\n" +
-                        "Need more help?\n" +
-                        "Contact: support@back2me.com")
-                .setPositiveButton("OK", null)
-                .show();
-    }
-
-    private void showLogoutConfirmation() {
-        new AlertDialog.Builder(this)
-                .setTitle("Logout")
-                .setMessage("Are you sure you want to logout?")
-                .setPositiveButton("Logout", (dialog, which) -> performLogout())
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void performLogout() {
-        auth.signOut();
-        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserStats();
     }
 }

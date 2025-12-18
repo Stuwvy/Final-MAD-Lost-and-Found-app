@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    tools:context=".EditItemActivity">
+    android:background="@color/backgroundColor">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,270 +14,200 @@
         <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp"
+            android:layout_height="56dp"
             android:background="@color/white"
-            android:elevation="4dp">
+            android:elevation="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
 
             <ImageButton
                 android:id="@+id/back_button"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/back"
                 android:src="@drawable/ic_arrow_back"
-                android:contentDescription="Back"
-                app:tint="@color/black" />
+                app:tint="@color/textPrimary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Edit Item"
+                android:text="@string/edit_item"
+                android:textColor="@color/textPrimary"
                 android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/black" />
-
+                android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Loading Indicator -->
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="32dp"
-            android:visibility="gone" />
-
-        <!-- Form Content -->
+        <!-- Content -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Photo Upload Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/photo_card"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="2dp"
-                app:strokeColor="#E0E0E0">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <!-- Upload Prompt -->
-                    <LinearLayout
-                        android:id="@+id/upload_prompt"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:background="#F5F5F5">
-
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:src="@drawable/ic_camera"
-                            app:tint="#9E9E9E" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Tap to change photo"
-                            android:textColor="#757575" />
-
-                    </LinearLayout>
-
-                    <!-- Image Preview -->
-                    <ImageView
-                        android:id="@+id/image_preview"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:visibility="gone" />
-
-                    <!-- Remove Photo Button -->
-                    <ImageButton
-                        android:id="@+id/button_remove_photo"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_gravity="top|end"
-                        android:layout_margin="8dp"
-                        android:background="@drawable/circle_background"
-                        android:src="@drawable/ic_close"
-                        android:padding="8dp"
-                        android:visibility="gone"
-                        app:tint="@color/white" />
-
-                </FrameLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Item Type -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Item Type"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/textPrimary" />
+                android:text="@string/item_type"
+                android:textColor="@color/textPrimary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-            <RadioGroup
-                android:id="@+id/radio_group_type"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/radio_lost"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_lost"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lost Item"
-                    android:checked="true" />
+                    android:checkable="true"
+                    android:checked="true"
+                    android:text="@string/lost"
+                    app:chipBackgroundColor="@color/statusLost"
+                    app:chipIcon="@drawable/ic_check"
+                    app:chipIconVisible="true"
+                    app:checkedIconVisible="false"
+                    android:textColor="@android:color/white" />
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/radio_found"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_found"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="24dp"
-                    android:text="Found Item" />
-
-            </RadioGroup>
+                    android:layout_marginStart="8dp"
+                    android:checkable="true"
+                    android:text="@string/found"
+                    app:chipBackgroundColor="@color/statusFound"
+                    app:checkedIconVisible="false"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
 
             <!-- Item Name -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="Item Name *"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/input_item_name"
+                    android:id="@+id/edit_item_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
-
+                    android:hint="@string/item_name"
+                    android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Location -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Location *"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                android:layout_marginTop="12dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:startIconDrawable="@drawable/ic_location">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/input_location"
+                    android:id="@+id/edit_location"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
-
+                    android:hint="@string/location"
+                    android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Date and Time Row -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Date"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/input_date"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:clickable="true"
-                        android:cursorVisible="false" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:hint="Time"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/input_time"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:clickable="true"
-                        android:cursorVisible="false" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
 
             <!-- Description -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Description"
+                android:layout_marginTop="12dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/input_description"
+                    android:id="@+id/edit_description"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="@string/description"
                     android:inputType="textMultiLine"
                     android:minLines="3"
                     android:gravity="top" />
-
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Buttons -->
-            <LinearLayout
+            <!-- Photo Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/photo"
+                android:textColor="@color/textPrimary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Image Preview -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_image_preview"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/image_preview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop" />
+
+                    <ImageButton
+                        android:id="@+id/button_remove_photo"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/circle_primary"
+                        android:src="@drawable/ic_close"
+                        app:tint="@android:color/white"
+                        android:contentDescription="@string/remove_photo" />
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Add Photo Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_add_photo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="8dp"
+                android:text="@string/add_photo"
+                app:icon="@drawable/ic_camera"
+                app:iconGravity="textStart"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_cancel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Cancel"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            <!-- Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_save_item"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:text="Save Changes"
-                    app:backgroundTint="@color/primaryBlue" />
-
-            </LinearLayout>
+            <!-- Submit Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_submit"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
+                android:text="@string/update_item"
+                android:textSize="16sp"
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
-
     </LinearLayout>
-
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

@@ -3,15 +3,15 @@ package com.example.back2me;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.chip.Chip;
+import com.google.android.material.card.MaterialCardView;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,115 +20,36 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-public class MyItemsAdapter extends RecyclerView.Adapter<MyItemsAdapter.ItemViewHolder> {
+public class MyItemsAdapter extends RecyclerView.Adapter<MyItemsAdapter.ViewHolder> {
 
-    private final List<Item> items;
-    private final OnItemActionListener listener;
+    private List<Item> items;
+    private OnItemActionListener listener;
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
-    private final SimpleDateFormat isoFormat;
-
-    // Action listener interface
     public interface OnItemActionListener {
         void onItemClick(Item item);
         void onEditClick(Item item);
         void onDeleteClick(Item item);
+        void onViewClaimsClick(Item item);
         void onMarkResolvedClick(Item item);
     }
 
     public MyItemsAdapter(List<Item> items, OnItemActionListener listener) {
         this.items = items;
         this.listener = listener;
-
-        isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     @NonNull
     @Override
-    public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_my_item, parent, false);
-        return new ItemViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Item item = items.get(position);
-
-        // Set item name
-        holder.textName.setText(item.getName());
-
-        // Set location
-        holder.textLocation.setText(item.getLocation());
-
-        // Set status chip
-        String status = item.getStatus().toLowerCase();
-        switch (status) {
-            case "lost":
-                holder.chipStatus.setText("🔴 Lost");
-                holder.chipStatus.setChipBackgroundColorResource(R.color.statusLostBackground);
-                break;
-            case "found":
-                holder.chipStatus.setText("🟢 Found");
-                holder.chipStatus.setChipBackgroundColorResource(R.color.statusFoundBackground);
-                break;
-            case "resolved":
-                holder.chipStatus.setText("✅ Resolved");
-                holder.chipStatus.setChipBackgroundColorResource(R.color.statusResolvedBackground);
-                break;
-            default:
-                holder.chipStatus.setText(item.getStatus());
-                break;
-        }
-
-        // Format date
-        try {
-            Date date = isoFormat.parse(item.getCreatedDate());
-            if (date != null) {
-                holder.textDate.setText(dateFormat.format(date));
-            } else {
-                holder.textDate.setText("N/A");
-            }
-        } catch (ParseException e) {
-            holder.textDate.setText("N/A");
-        }
-
-        // Load image
-        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
-                    .load(item.getImageUrl())
-                    .centerCrop()
-                    .placeholder(R.drawable.item_card_background)
-                    .error(R.drawable.item_card_background)
-                    .into(holder.imageItem);
-        } else {
-            holder.imageItem.setBackgroundResource(R.drawable.item_card_background);
-        }
-
-        // Hide mark resolved button if already resolved
-        if (status.equals("resolved")) {
-            holder.buttonMarkResolved.setVisibility(View.GONE);
-        } else {
-            holder.buttonMarkResolved.setVisibility(View.VISIBLE);
-        }
-
-        // Click listeners
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onItemClick(item);
-        });
-
-        holder.buttonEdit.setOnClickListener(v -> {
-            if (listener != null) listener.onEditClick(item);
-        });
-
-        holder.buttonDelete.setOnClickListener(v -> {
-            if (listener != null) listener.onDeleteClick(item);
-        });
-
-        holder.buttonMarkResolved.setOnClickListener(v -> {
-            if (listener != null) listener.onMarkResolvedClick(item);
-        });
+        holder.bind(item);
     }
 
     @Override
@@ -136,26 +57,112 @@ public class MyItemsAdapter extends RecyclerView.Adapter<MyItemsAdapter.ItemView
         return items.size();
     }
 
-    public static class ItemViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
+        MaterialCardView cardView;
         ImageView imageItem;
         TextView textName;
         TextView textLocation;
         TextView textDate;
-        Chip chipStatus;
-        ImageButton buttonEdit;
-        ImageButton buttonDelete;
-        ImageButton buttonMarkResolved;
+        TextView textStatus;
+        ImageView buttonMenu;
 
-        public ItemViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardView = itemView.findViewById(R.id.card_item);
             imageItem = itemView.findViewById(R.id.image_item);
             textName = itemView.findViewById(R.id.text_item_name);
-            textLocation = itemView.findViewById(R.id.text_item_location);
-            textDate = itemView.findViewById(R.id.text_item_date);
-            chipStatus = itemView.findViewById(R.id.chip_status);
-            buttonEdit = itemView.findViewById(R.id.button_edit);
-            buttonDelete = itemView.findViewById(R.id.button_delete);
-            buttonMarkResolved = itemView.findViewById(R.id.button_mark_resolved);
+            textLocation = itemView.findViewById(R.id.text_location);
+            textDate = itemView.findViewById(R.id.text_date);
+            textStatus = itemView.findViewById(R.id.text_status);
+            buttonMenu = itemView.findViewById(R.id.button_menu);
+        }
+
+        void bind(Item item) {
+            textName.setText(item.getName());
+            textLocation.setText(item.getLocation());
+            textDate.setText(formatDate(item.getCreatedDate()));
+
+            // Status badge
+            String status = item.getStatus();
+            if ("lost".equalsIgnoreCase(status)) {
+                textStatus.setText(R.string.lost);
+                textStatus.setBackgroundResource(R.drawable.badge_lost);
+            } else if ("found".equalsIgnoreCase(status)) {
+                textStatus.setText(R.string.found);
+                textStatus.setBackgroundResource(R.drawable.badge_found);
+            } else {
+                textStatus.setText(R.string.resolved);
+                textStatus.setBackgroundResource(R.drawable.badge_resolved);
+            }
+
+            // Image
+            String imageUrl = item.getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                Glide.with(itemView.getContext())
+                        .load(imageUrl)
+                        .placeholder(R.drawable.placeholder_image)
+                        .error(R.drawable.placeholder_image)
+                        .centerCrop()
+                        .into(imageItem);
+            } else {
+                imageItem.setImageResource(R.drawable.placeholder_image);
+            }
+
+            // Click listeners
+            cardView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(item);
+                }
+            });
+
+            buttonMenu.setOnClickListener(v -> showPopupMenu(v, item));
+        }
+
+        private void showPopupMenu(View anchor, Item item) {
+            PopupMenu popup = new PopupMenu(anchor.getContext(), anchor);
+            popup.getMenuInflater().inflate(R.menu.menu_my_item, popup.getMenu());
+
+            // Hide "Mark Resolved" if already resolved
+            if ("resolved".equalsIgnoreCase(item.getStatus())) {
+                popup.getMenu().findItem(R.id.action_mark_resolved).setVisible(false);
+            }
+
+            popup.setOnMenuItemClickListener(menuItem -> {
+                if (listener == null) return false;
+
+                int itemId = menuItem.getItemId();
+                if (itemId == R.id.action_edit) {
+                    listener.onEditClick(item);
+                    return true;
+                } else if (itemId == R.id.action_view_claims) {
+                    listener.onViewClaimsClick(item);
+                    return true;
+                } else if (itemId == R.id.action_mark_resolved) {
+                    listener.onMarkResolvedClick(item);
+                    return true;
+                } else if (itemId == R.id.action_delete) {
+                    listener.onDeleteClick(item);
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+        }
+
+        private String formatDate(String isoDate) {
+            if (isoDate == null || isoDate.isEmpty()) return "";
+
+            try {
+                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                Date date = isoFormat.parse(isoDate);
+
+                SimpleDateFormat displayFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+                return displayFormat.format(date);
+            } catch (ParseException e) {
+                return isoDate;
+            }
         }
     }
 }

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="RoundedCorner" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
 
     <!-- Main App Theme -->
     <style name="Theme.Back2Me" parent="Theme.Material3.Light.NoActionBar">
@@ -7,6 +11,7 @@
         <item name="colorPrimary">@color/primaryBlue</item>
         <item name="colorPrimaryDark">@color/primaryBlueDark</item>
         <item name="colorAccent">@color/accentBlue</item>
+
 
         <!-- Background Colors -->
         <item name="android:colorBackground">@color/backgroundColor</item>

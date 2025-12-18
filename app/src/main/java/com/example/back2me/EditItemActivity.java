@@ -1,14 +1,12 @@
 package com.example.back2me;
 
 import android.Manifest;
-import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Toast;
 
@@ -20,59 +18,48 @@ import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.back2me.databinding.ActivityEditItemBinding;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-
-import java.io.ByteArrayOutputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
-import java.util.UUID;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class EditItemActivity extends AppCompatActivity {
 
-    private static final String TAG = "EditItemActivity";
-
     private ActivityEditItemBinding binding;
+    private Handler mainHandler;
+
     private String itemId;
     private Item currentItem;
-    private Calendar selectedDate = Calendar.getInstance();
+    private String selectedStatus = "lost";
     private Uri selectedImageUri = null;
+    private Bitmap selectedBitmap = null;
     private String currentImageUrl = "";
     private boolean imageChanged = false;
+    private boolean isUploading = false;
 
-    // Camera launcher
     private final ActivityResultLauncher<Void> cameraLauncher =
             registerForActivityResult(new ActivityResultContracts.TakePicturePreview(), bitmap -> {
                 if (bitmap != null) {
-                    displayImage(bitmap);
+                    selectedBitmap = bitmap;
+                    selectedImageUri = null;
                     imageChanged = true;
+                    displaySelectedImage(bitmap);
                 }
             });
 
-    // Gallery launcher
     private final ActivityResultLauncher<String> galleryLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     selectedImageUri = uri;
-                    binding.imagePreview.setImageURI(uri);
-                    binding.imagePreview.setVisibility(View.VISIBLE);
-                    binding.uploadPrompt.setVisibility(View.GONE);
-                    binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
+                    selectedBitmap = null;
                     imageChanged = true;
+                    displaySelectedImage(uri);
                 }
             });
 
-    // Permission launcher
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    openCamera();
+                    cameraLauncher.launch(null);
                 } else {
-                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.camera_permission_required, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -82,53 +69,53 @@ public class EditItemActivity extends AppCompatActivity {
         binding = ActivityEditItemBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        itemId = getIntent().getStringExtra("ITEM_ID");
+        mainHandler = new Handler(Looper.getMainLooper());
 
-        if (itemId == null || itemId.isEmpty()) {
-            Toast.makeText(this, "Item ID not provided", Toast.LENGTH_SHORT).show();
+        itemId = getIntent().getStringExtra("ITEM_ID");
+        if (itemId == null) {
+            Toast.makeText(this, "Item not found", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
         setupClickListeners();
-        loadItemData();
+        loadItem();
     }
 
     private void setupClickListeners() {
         binding.backButton.setOnClickListener(v -> finish());
-        binding.buttonCancel.setOnClickListener(v -> finish());
-        binding.buttonSaveItem.setOnClickListener(v -> saveChanges());
 
-        // Date & Time
-        binding.inputDate.setOnClickListener(v -> showDatePicker());
-        binding.inputTime.setOnClickListener(v -> showTimePicker());
+        binding.chipLost.setOnClickListener(v -> {
+            selectedStatus = "lost";
+            binding.chipLost.setChecked(true);
+            binding.chipFound.setChecked(false);
+        });
 
-        // Photo actions
-        binding.photoCard.setOnClickListener(v -> showPhotoOptionsDialog());
-        binding.buttonRemovePhoto.setOnClickListener(v -> removePhoto());
+        binding.chipFound.setOnClickListener(v -> {
+            selectedStatus = "found";
+            binding.chipFound.setChecked(true);
+            binding.chipLost.setChecked(false);
+        });
+
+        binding.buttonAddPhoto.setOnClickListener(v -> showImagePickerDialog());
+        binding.buttonRemovePhoto.setOnClickListener(v -> removeSelectedImage());
+        binding.buttonSubmit.setOnClickListener(v -> validateAndSubmit());
     }
 
-    private void loadItemData() {
+    private void loadItem() {
         binding.progressBar.setVisibility(View.VISIBLE);
 
-        ItemRepository.getItemById(itemId, new ItemRepository.ItemCallback() {
+        ItemRepository.getItemById(itemId, new ItemRepository.SingleItemCallback() {
             @Override
             public void onSuccess(Item item) {
                 binding.progressBar.setVisibility(View.GONE);
-
-                if (item != null) {
-                    currentItem = item;
-                    populateFields(item);
-                } else {
-                    Toast.makeText(EditItemActivity.this, "Item not found", Toast.LENGTH_SHORT).show();
-                    finish();
-                }
+                currentItem = item;
+                populateFields(item);
             }
 
             @Override
             public void onError(Exception e) {
                 binding.progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error loading item", e);
                 Toast.makeText(EditItemActivity.this, "Error loading item", Toast.LENGTH_SHORT).show();
                 finish();
             }
@@ -136,224 +123,180 @@ public class EditItemActivity extends AppCompatActivity {
     }
 
     private void populateFields(Item item) {
-        // Set item name
-        binding.inputItemName.setText(item.getName());
+        binding.editItemName.setText(item.getName());
+        binding.editLocation.setText(item.getLocation());
+        binding.editDescription.setText(item.getDescription());
 
-        // Set location
-        binding.inputLocation.setText(item.getLocation());
-
-        // Set description
-        binding.inputDescription.setText(item.getDescription());
-
-        // Set status radio button
-        if ("found".equals(item.getStatus().toLowerCase())) {
-            binding.radioFound.setChecked(true);
+        selectedStatus = item.getStatus();
+        if ("found".equalsIgnoreCase(selectedStatus)) {
+            binding.chipFound.setChecked(true);
+            binding.chipLost.setChecked(false);
         } else {
-            binding.radioLost.setChecked(true);
+            binding.chipLost.setChecked(true);
+            binding.chipFound.setChecked(false);
         }
 
-        // Parse and set date/time
-        try {
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Date date = isoFormat.parse(item.getCreatedDate());
-
-            if (date != null) {
-                selectedDate.setTime(date);
-
-                SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-
-                binding.inputDate.setText(dateFormat.format(date));
-                binding.inputTime.setText(timeFormat.format(date));
-            }
-        } catch (ParseException e) {
-            Log.e(TAG, "Date parsing error", e);
-        }
-
-        // Load existing image
         currentImageUrl = item.getImageUrl();
         if (currentImageUrl != null && !currentImageUrl.isEmpty()) {
+            binding.cardImagePreview.setVisibility(View.VISIBLE);
             Glide.with(this)
                     .load(currentImageUrl)
                     .centerCrop()
+                    .placeholder(R.drawable.placeholder_image)
                     .into(binding.imagePreview);
-            binding.imagePreview.setVisibility(View.VISIBLE);
-            binding.uploadPrompt.setVisibility(View.GONE);
-            binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
+            binding.buttonAddPhoto.setText(R.string.change_photo);
+        } else {
+            binding.cardImagePreview.setVisibility(View.GONE);
         }
     }
 
-    private void showPhotoOptionsDialog() {
-        String[] options = {"📷 Take Photo", "🖼️ Choose from Gallery"};
-
+    private void showImagePickerDialog() {
+        String[] options = {"Take Photo", "Choose from Gallery"};
         new AlertDialog.Builder(this)
                 .setTitle("Change Photo")
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
-                        checkCameraPermissionAndOpen();
+                        checkCameraPermissionAndLaunch();
                     } else {
                         galleryLauncher.launch("image/*");
                     }
                 })
-                .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void showDatePicker() {
-        int year = selectedDate.get(Calendar.YEAR);
-        int month = selectedDate.get(Calendar.MONTH);
-        int day = selectedDate.get(Calendar.DAY_OF_MONTH);
-
-        new DatePickerDialog(this, (view, selectedYear, selectedMonth, selectedDay) -> {
-            selectedDate.set(Calendar.YEAR, selectedYear);
-            selectedDate.set(Calendar.MONTH, selectedMonth);
-            selectedDate.set(Calendar.DAY_OF_MONTH, selectedDay);
-
-            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-            binding.inputDate.setText(dateFormat.format(selectedDate.getTime()));
-        }, year, month, day).show();
-    }
-
-    private void showTimePicker() {
-        int hour = selectedDate.get(Calendar.HOUR_OF_DAY);
-        int minute = selectedDate.get(Calendar.MINUTE);
-
-        new TimePickerDialog(this, (view, selectedHour, selectedMinute) -> {
-            selectedDate.set(Calendar.HOUR_OF_DAY, selectedHour);
-            selectedDate.set(Calendar.MINUTE, selectedMinute);
-
-            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-            binding.inputTime.setText(timeFormat.format(selectedDate.getTime()));
-        }, hour, minute, false).show();
-    }
-
-    private void checkCameraPermissionAndOpen() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            openCamera();
+    private void checkCameraPermissionAndLaunch() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            cameraLauncher.launch(null);
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
     }
 
-    private void openCamera() {
-        cameraLauncher.launch(null);
-    }
-
-    private void displayImage(Bitmap bitmap) {
+    private void displaySelectedImage(Bitmap bitmap) {
+        binding.cardImagePreview.setVisibility(View.VISIBLE);
         binding.imagePreview.setImageBitmap(bitmap);
-        binding.imagePreview.setVisibility(View.VISIBLE);
-        binding.uploadPrompt.setVisibility(View.GONE);
-        binding.buttonRemovePhoto.setVisibility(View.VISIBLE);
-
-        selectedImageUri = getImageUriFromBitmap(bitmap);
+        binding.buttonAddPhoto.setText(R.string.change_photo);
     }
 
-    private Uri getImageUriFromBitmap(Bitmap bitmap) {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "Item_Photo", null);
-        return Uri.parse(path);
+    private void displaySelectedImage(Uri uri) {
+        binding.cardImagePreview.setVisibility(View.VISIBLE);
+        Glide.with(this).load(uri).centerCrop().into(binding.imagePreview);
+        binding.buttonAddPhoto.setText(R.string.change_photo);
     }
 
-    private void removePhoto() {
+    private void removeSelectedImage() {
         selectedImageUri = null;
+        selectedBitmap = null;
         currentImageUrl = "";
         imageChanged = true;
-        binding.imagePreview.setVisibility(View.GONE);
+        binding.cardImagePreview.setVisibility(View.GONE);
         binding.imagePreview.setImageDrawable(null);
-        binding.uploadPrompt.setVisibility(View.VISIBLE);
-        binding.buttonRemovePhoto.setVisibility(View.GONE);
+        binding.buttonAddPhoto.setText(R.string.add_photo);
     }
 
-    private void saveChanges() {
-        String name = binding.inputItemName.getText().toString().trim();
-        String location = binding.inputLocation.getText().toString().trim();
-        String description = binding.inputDescription.getText().toString().trim();
-        String status = binding.radioLost.isChecked() ? "lost" : "found";
+    private void validateAndSubmit() {
+        String name = binding.editItemName.getText().toString().trim();
+        String location = binding.editLocation.getText().toString().trim();
+        String description = binding.editDescription.getText().toString().trim();
 
-        if (name.isEmpty() || location.isEmpty()) {
-            Toast.makeText(this, "Item Name and Location are required.", Toast.LENGTH_LONG).show();
+        if (name.isEmpty()) {
+            binding.editItemName.setError(getString(R.string.error_item_name_required));
+            return;
+        }
+        if (location.isEmpty()) {
+            binding.editLocation.setError(getString(R.string.error_location_required));
+            return;
+        }
+        if (isUploading) {
+            Toast.makeText(this, R.string.please_wait, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        binding.buttonSaveItem.setEnabled(false);
-        binding.buttonSaveItem.setText("Saving...");
+        setLoading(true);
 
-        // Convert selected date to ISO format
-        SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String createdDate = isoFormat.format(selectedDate.getTime());
-
-        if (imageChanged && selectedImageUri != null) {
-            // Upload new image first
-            uploadImageToFirebase(selectedImageUri, imageUrl -> {
-                String finalImageUrl = imageUrl != null ? imageUrl : "";
-                updateItemInFirestore(name, location, description, status, createdDate, finalImageUrl);
-            });
+        if (imageChanged) {
+            if (selectedBitmap != null) {
+                uploadBitmapAndUpdate(name, location, description);
+            } else if (selectedImageUri != null) {
+                uploadUriAndUpdate(name, location, description);
+            } else {
+                updateItem(name, location, description, "");
+            }
         } else {
-            // No image change, use existing URL
-            String imageUrl = imageChanged ? "" : currentImageUrl; // If removed, use empty string
-            updateItemInFirestore(name, location, description, status, createdDate, imageUrl);
+            updateItem(name, location, description, currentImageUrl);
         }
     }
 
-    private void updateItemInFirestore(String name, String location, String description,
-                                       String status, String createdDate, String imageUrl) {
-        Item updatedItem = new Item(
-                itemId,
-                name,
-                location,
-                description,
-                status,
-                currentItem.getCreatedBy(),
-                createdDate,
-                imageUrl
-        );
+    private void uploadBitmapAndUpdate(String name, String location, String description) {
+        isUploading = true;
+        CloudinaryHelper.uploadBitmap(selectedBitmap, new CloudinaryHelper.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    updateItem(name, location, description, imageUrl);
+                });
+            }
 
-        ItemRepository.updateItem(itemId, updatedItem, new ItemRepository.OperationCallback() {
+            @Override
+            public void onError(String errorMessage) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    setLoading(false);
+                    Toast.makeText(EditItemActivity.this, "Upload failed: " + errorMessage, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void uploadUriAndUpdate(String name, String location, String description) {
+        isUploading = true;
+        CloudinaryHelper.uploadUri(this, selectedImageUri, new CloudinaryHelper.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    updateItem(name, location, description, imageUrl);
+                });
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                mainHandler.post(() -> {
+                    isUploading = false;
+                    setLoading(false);
+                    Toast.makeText(EditItemActivity.this, "Upload failed: " + errorMessage, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void updateItem(String name, String location, String description, String imageUrl) {
+        currentItem.setName(name);
+        currentItem.setLocation(location);
+        currentItem.setDescription(description);
+        currentItem.setStatus(selectedStatus);
+        currentItem.setImageUrl(imageUrl);
+
+        ItemRepository.updateItem(currentItem, new ItemRepository.UpdateCallback() {
             @Override
             public void onSuccess() {
-                binding.buttonSaveItem.setEnabled(true);
-                binding.buttonSaveItem.setText("Save Changes");
-
-                Toast.makeText(EditItemActivity.this, "Item updated successfully!", Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
+                setLoading(false);
+                Toast.makeText(EditItemActivity.this, R.string.item_updated_successfully, Toast.LENGTH_SHORT).show();
                 finish();
             }
 
             @Override
             public void onError(Exception e) {
-                binding.buttonSaveItem.setEnabled(true);
-                binding.buttonSaveItem.setText("Save Changes");
-
-                Toast.makeText(EditItemActivity.this,
-                        "Failed to update item: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                setLoading(false);
+                Toast.makeText(EditItemActivity.this, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void uploadImageToFirebase(Uri imageUri, OnImageUploadListener listener) {
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
-        StorageReference imageRef = storageRef.child("item_images/" + UUID.randomUUID().toString() + ".jpg");
-
-        imageRef.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    imageRef.getDownloadUrl()
-                            .addOnSuccessListener(uri -> listener.onUploadComplete(uri.toString()))
-                            .addOnFailureListener(e -> {
-                                e.printStackTrace();
-                                listener.onUploadComplete(null);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    listener.onUploadComplete(null);
-                });
-    }
-
-    private interface OnImageUploadListener {
-        void onUploadComplete(String imageUrl);
+    private void setLoading(boolean loading) {
+        binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.buttonSubmit.setEnabled(!loading);
+        binding.buttonSubmit.setText(loading ? R.string.updating : R.string.update_item);
     }
 }
