@@ -257,9 +257,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="40dp"
@@ -274,8 +274,8 @@
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:layout_marginStart="16dp"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView
@@ -314,9 +314,11 @@
                 android:id="@+id/card_messages"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+
+                android:layout_marginBottom="12dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -367,9 +369,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="40dp"
@@ -384,8 +386,8 @@
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:layout_marginStart="16dp"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView

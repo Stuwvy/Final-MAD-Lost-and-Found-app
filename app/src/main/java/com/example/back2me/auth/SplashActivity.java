@@ -1,15 +1,19 @@
 package com.example.back2me.auth;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.back2me.AuthData;
 import com.example.back2me.MainActivity;
 import com.example.back2me.R;
 import com.google.firebase.auth.FirebaseAuth;
 
+@SuppressLint("CustomSplashScreen")
 public class SplashActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;

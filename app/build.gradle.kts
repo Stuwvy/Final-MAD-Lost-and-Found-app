@@ -47,6 +47,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.core:core-splashscreen:1.2.0")
     // Core Android - Change to non-KTX versions
     implementation("androidx.core:core:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")

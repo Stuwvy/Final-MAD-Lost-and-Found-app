@@ -10,22 +10,22 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import java.util.List;
 
 public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemViewHolder> {
 
     private final List<Item> items;
-    private final OnItemClickListener onItemClickListener;
+    private final OnItemClickListener listener;
 
-    // Click listener interface
     public interface OnItemClickListener {
         void onItemClick(Item item);
     }
 
     public ItemGridAdapter(List<Item> items, OnItemClickListener listener) {
         this.items = items;
-        this.onItemClickListener = listener;
+        this.listener = listener;
     }
 
     @NonNull
@@ -40,24 +40,45 @@ public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemVi
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
         Item item = items.get(position);
 
-        holder.itemName.setText(item.getName());
-        holder.itemLocation.setText(item.getLocation());
+        // Set item name
+        holder.textName.setText(item.getName());
 
-        // Load image if available
-        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
-                    .load(item.getImageUrl())
-                    .centerCrop()
-                    .placeholder(R.drawable.item_card_background)
-                    .error(R.drawable.item_card_background)
-                    .into(holder.itemImage);
-        } else {
-            holder.itemImage.setBackgroundResource(R.drawable.item_card_background);
+        // Set location
+        holder.textLocation.setText(item.getLocation());
+
+        // Set status badge
+        String status = item.getStatus();
+        if (status != null) {
+            if (status.equalsIgnoreCase("lost")) {
+                holder.textStatus.setText(R.string.status_lost);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_lost);
+            } else if (status.equalsIgnoreCase("found")) {
+                holder.textStatus.setText(R.string.status_found);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_found);
+            } else if (status.equalsIgnoreCase("resolved")) {
+                holder.textStatus.setText(R.string.status_resolved);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_resolved);
+            }
         }
 
+        // Load image with Glide
+        String imageUrl = item.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(holder.imageItem);
+        } else {
+            holder.imageItem.setImageResource(R.drawable.placeholder_image);
+        }
+
+        // Click listener
         holder.itemView.setOnClickListener(v -> {
-            if (onItemClickListener != null) {
-                onItemClickListener.onItemClick(item);
+            if (listener != null) {
+                listener.onItemClick(item);
             }
         });
     }
@@ -68,15 +89,17 @@ public class ItemGridAdapter extends RecyclerView.Adapter<ItemGridAdapter.ItemVi
     }
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
-        ImageView itemImage;
-        TextView itemName;
-        TextView itemLocation;
+        ImageView imageItem;
+        TextView textName;
+        TextView textLocation;
+        TextView textStatus;
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
-            itemImage = itemView.findViewById(R.id.item_image);
-            itemName = itemView.findViewById(R.id.text_item_name);
-            itemLocation = itemView.findViewById(R.id.text_item_location);
+            imageItem = itemView.findViewById(R.id.image_item);
+            textName = itemView.findViewById(R.id.text_item_name);
+            textLocation = itemView.findViewById(R.id.text_item_location);
+            textStatus = itemView.findViewById(R.id.text_item_status);
         }
     }
 }

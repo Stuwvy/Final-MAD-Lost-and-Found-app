@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,23 +22,25 @@ import java.util.TimeZone;
 public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemViewHolder> {
 
     private final List<Item> items;
-    private final OnItemClickListener onItemClickListener;
+    private final OnItemClickListener listener;
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
     private final SimpleDateFormat isoFormat;
+    private final SimpleDateFormat displayDateFormat;
+    private final SimpleDateFormat displayTimeFormat;
 
-    // Click listener interface
     public interface OnItemClickListener {
         void onItemClick(Item item);
     }
 
     public ItemListAdapter(List<Item> items, OnItemClickListener listener) {
         this.items = items;
-        this.onItemClickListener = listener;
+        this.listener = listener;
 
+        // Date formatters
         isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        displayDateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
+        displayTimeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
     }
 
     @NonNull
@@ -52,39 +55,60 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
     public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
         Item item = items.get(position);
 
-        holder.itemName.setText(item.getName());
-        holder.itemLocation.setText(item.getLocation());
+        // Set item name
+        holder.textName.setText(item.getName());
 
-        // Load image if available
-        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
-                    .load(item.getImageUrl())
-                    .centerCrop()
-                    .placeholder(R.drawable.item_card_background)
-                    .error(R.drawable.item_card_background)
-                    .into(holder.itemImage);
-        } else {
-            holder.itemImage.setBackgroundResource(R.drawable.item_card_background);
-        }
+        // Set location
+        holder.textLocation.setText(item.getLocation());
 
-        // Format time and date
-        try {
-            Date date = isoFormat.parse(item.getCreatedDate());
-            if (date != null) {
-                holder.itemTime.setText(timeFormat.format(date));
-                holder.itemDate.setText(dateFormat.format(date));
-            } else {
-                holder.itemTime.setText("N/A");
-                holder.itemDate.setText("N/A");
+        // Set status badge
+        String status = item.getStatus();
+        if (status != null) {
+            if (status.equalsIgnoreCase("lost")) {
+                holder.textStatus.setText(R.string.status_lost);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_lost);
+            } else if (status.equalsIgnoreCase("found")) {
+                holder.textStatus.setText(R.string.status_found);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_found);
+            } else if (status.equalsIgnoreCase("resolved")) {
+                holder.textStatus.setText(R.string.status_resolved);
+                holder.textStatus.setBackgroundResource(R.drawable.badge_resolved);
             }
-        } catch (ParseException e) {
-            holder.itemTime.setText("N/A");
-            holder.itemDate.setText("N/A");
         }
 
+        // Format and set date/time
+        String dateStr = item.getCreatedDate();
+        if (dateStr != null && !dateStr.isEmpty()) {
+            try {
+                Date date = isoFormat.parse(dateStr);
+                if (date != null) {
+                    holder.textDate.setText(displayDateFormat.format(date));
+                    holder.textTime.setText(displayTimeFormat.format(date));
+                }
+            } catch (ParseException e) {
+                holder.textDate.setText("");
+                holder.textTime.setText("");
+            }
+        }
+
+        // Load image with Glide
+        String imageUrl = item.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(holder.imageItem);
+        } else {
+            holder.imageItem.setImageResource(R.drawable.placeholder_image);
+        }
+
+        // Click listener
         holder.itemView.setOnClickListener(v -> {
-            if (onItemClickListener != null) {
-                onItemClickListener.onItemClick(item);
+            if (listener != null) {
+                listener.onItemClick(item);
             }
         });
     }
@@ -95,19 +119,21 @@ public class ItemListAdapter extends RecyclerView.Adapter<ItemListAdapter.ItemVi
     }
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
-        ImageView itemImage;
-        TextView itemName;
-        TextView itemLocation;
-        TextView itemTime;
-        TextView itemDate;
+        ImageView imageItem;
+        TextView textName;
+        TextView textLocation;
+        TextView textStatus;
+        TextView textDate;
+        TextView textTime;
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
-            itemImage = itemView.findViewById(R.id.item_image);
-            itemName = itemView.findViewById(R.id.text_item_name);
-            itemLocation = itemView.findViewById(R.id.text_item_location);
-            itemTime = itemView.findViewById(R.id.text_item_time);
-            itemDate = itemView.findViewById(R.id.text_item_date);
+            imageItem = itemView.findViewById(R.id.image_item);
+            textName = itemView.findViewById(R.id.text_item_name);
+            textLocation = itemView.findViewById(R.id.text_item_location);
+            textStatus = itemView.findViewById(R.id.text_item_status);
+            textDate = itemView.findViewById(R.id.text_item_date);
+            textTime = itemView.findViewById(R.id.text_item_time);
         }
     }
 }

@@ -65,4 +65,35 @@
     <string name="error_creating_conversation">Error creating conversation</string>
     <string name="error_sending_message">Error sending message</string>
     <string name="send_message">Send Message</string>
+    <!-- Image Upload -->
+    <string name="add_photo">Add Photo</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="camera_permission_required">Camera permission is required</string>
+    <string name="error_upload_failed">Failed to upload image</string>
+    <string name="please_wait">Please wait…</string>
+
+    <!-- Item Posting -->
+    <string name="post_item">Post Item</string>
+    <string name="posting">Posting…</string>
+    <string name="item_posted_successfully">Item posted successfully!</string>
+    <string name="error_posting_item">Error posting item</string>
+    <string name="error_item_name_required">Item name is required</string>
+    <string name="error_location_required">Location is required</string>
+
+    <!-- Status -->
+    <string name="status_lost">Lost</string>
+    <string name="status_found">Found</string>
+    <string name="status_resolved">Resolved</string>
+
+    <!-- Add Item Form -->
+    <string name="item_type">Item Type</string>
+    <string name="lost">Lost</string>
+    <string name="found">Found</string>
+    <string name="item_name">Item Name</string>
+    <string name="location">Location</string>
+    <string name="description">Description</string>
+    <string name="photo">Photo</string>
+    <string name="remove_photo">Remove Photo</string>
 </resources>
