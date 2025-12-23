@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/backgroundColor">
+    android:background="?android:colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,28 +15,27 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:background="@color/white"
+            android:background="?colorSurface"
             android:elevation="4dp"
             android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="8dp">
 
             <ImageButton
                 android:id="@+id/back_button"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/back"
                 android:src="@drawable/ic_arrow_back"
-                app:tint="@color/textPrimary" />
+                app:tint="?android:textColorPrimary"
+                android:contentDescription="@string/back" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="8dp"
                 android:text="@string/settings"
-                android:textColor="@color/textPrimary"
-                android:textSize="20sp"
+                android:textColor="?android:textColorPrimary"
+                android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -45,6 +44,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
+            app:cardBackgroundColor="?colorSurface"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp">
 
@@ -52,14 +52,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
                 android:padding="16dp">
 
-                <ImageView
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
+                <!-- Avatar -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/image_profile"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:src="@drawable/ic_profile_circle"
-                    app:tint="@color/primaryBlue" />
+                    android:scaleType="centerCrop"
+                    android:background="@color/lightGray"
+                    app:shapeAppearanceOverlay="@style/CircleImageView" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -69,32 +72,32 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/text_name"
+                        android:id="@+id/text_user_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/textPrimary"
-                        android:textSize="18sp"
+                        android:textColor="?android:textColorPrimary"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/text_email"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textColor="@color/textSecondary"
+                        android:layout_marginTop="2dp"
+                        android:textColor="?android:textColorSecondary"
                         android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Preferences -->
+        <!-- Preferences Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:text="@string/preferences"
-            android:textColor="@color/textSecondary"
+            android:textColor="?android:textColorSecondary"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -103,6 +106,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="8dp"
+            app:cardBackgroundColor="?colorSurface"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp">
 
@@ -111,6 +115,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Notifications -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -121,7 +126,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_notifications"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -129,7 +134,7 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/notifications"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
@@ -142,8 +147,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginStart="56dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/divider" />
 
+                <!-- Dark Mode -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -154,7 +160,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_dark_mode"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -162,7 +168,7 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/dark_mode"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
@@ -173,14 +179,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Account -->
+        <!-- Account Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="24dp"
             android:text="@string/account"
-            android:textColor="@color/textSecondary"
+            android:textColor="?android:textColorSecondary"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -189,6 +195,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="8dp"
+            app:cardBackgroundColor="?colorSurface"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp">
 
@@ -197,8 +204,9 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Edit Profile -->
                 <LinearLayout
-                    android:id="@+id/card_edit_profile"
+                    android:id="@+id/layout_edit_profile"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -211,7 +219,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_edit"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -219,24 +227,25 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/edit_profile"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textHint" />
+                        app:tint="?android:textColorHint" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginStart="56dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/divider" />
 
+                <!-- Change Password -->
                 <LinearLayout
-                    android:id="@+id/card_change_password"
+                    android:id="@+id/layout_change_password"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -249,7 +258,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_lock"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -257,26 +266,26 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/change_password"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textHint" />
+                        app:tint="?android:textColorHint" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- About -->
+        <!-- About Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="24dp"
             android:text="@string/about"
-            android:textColor="@color/textSecondary"
+            android:textColor="?android:textColorSecondary"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -285,6 +294,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="8dp"
+            app:cardBackgroundColor="?colorSurface"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp">
 
@@ -293,8 +303,9 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Privacy Policy -->
                 <LinearLayout
-                    android:id="@+id/card_privacy"
+                    android:id="@+id/layout_privacy_policy"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -307,7 +318,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_privacy"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -315,24 +326,25 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/privacy_policy"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textHint" />
+                        app:tint="?android:textColorHint" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginStart="56dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/divider" />
 
+                <!-- Terms of Service -->
                 <LinearLayout
-                    android:id="@+id/card_terms"
+                    android:id="@+id/layout_terms_of_service"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -345,7 +357,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_terms"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -353,24 +365,25 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/terms_of_service"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textHint" />
+                        app:tint="?android:textColorHint" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginStart="56dp"
-                    android:background="#E0E0E0" />
+                    android:background="@color/divider" />
 
+                <!-- About Back2Me -->
                 <LinearLayout
-                    android:id="@+id/card_about"
+                    android:id="@+id/layout_about"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -383,7 +396,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_info"
-                        app:tint="@color/textSecondary" />
+                        app:tint="?android:textColorSecondary" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -391,76 +404,50 @@
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
                         android:text="@string/about_app"
-                        android:textColor="@color/textPrimary"
+                        android:textColor="?android:textColorPrimary"
                         android:textSize="16sp" />
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/textHint" />
+                        app:tint="?android:textColorHint" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Logout -->
-        <LinearLayout
-            android:id="@+id/card_logout"
+        <!-- Logout Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_logout"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="24dp"
-            android:background="@drawable/button_outline_blue"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:padding="16dp">
+            android:text="@string/logout"
+            android:textColor="?colorPrimary"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_logout"
+            app:iconGravity="textStart"
+            app:iconTint="?colorPrimary"
+            app:strokeColor="?colorPrimary" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_logout"
-                app:tint="@color/primaryBlue" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/logout"
-                android:textColor="@color/primaryBlue"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Delete Account -->
-        <LinearLayout
-            android:id="@+id/card_delete_account"
+        <!-- Delete Account Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_delete_account"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="32dp"
-            android:background="@drawable/button_outline_red"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:padding="16dp">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_delete"
-                app:tint="@color/statusLost" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/delete_account"
-                android:textColor="@color/statusLost"
-                android:textSize="16sp" />
-        </LinearLayout>
+            android:text="@string/delete_account"
+            android:textColor="@color/statusLost"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_delete"
+            app:iconGravity="textStart"
+            app:iconTint="@color/statusLost"
+            app:strokeColor="@color/statusLost" />
 
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>

@@ -13,6 +13,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
+
         android:name=".Back2MeApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -96,6 +97,9 @@
             android:name=".ChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false" />
 
     </application>
 

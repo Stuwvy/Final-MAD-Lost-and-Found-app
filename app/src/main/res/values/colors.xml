@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
-
-
-    <!-- App Theme Colors -->
+    <!-- Primary Colors (GREEN) -->
+    <color name="primaryGreen">#4CAF50</color>
+    <color name="primaryGreenDark">#2E7D32</color>
+    <color name="primaryGreenLight">#81C784</color>
+    <color name="accentGreen">#00C853</color>
     <color name="darkGreen">#2E7D32</color>
-    <color name="lightGreen">#4CAF50</color>
+    <color name="lightGreen">#E8F5E9</color>
 
-    <!-- Background Colors -->
+    <!-- Legacy Blue (keep for compatibility) -->
+    <color name="primaryBlue">#4CAF50</color>
+    <color name="primaryBlueDark">#2E7D32</color>
+    <color name="accentBlue">#00C853</color>
+    <color name="lightBlue">#E3F2FD</color>
 
+    <!-- Background Colors - LIGHT MODE -->
+    <color name="backgroundColor">#F5F5F5</color>
+    <color name="cardBackground">#FFFFFF</color>
+    <color name="surfaceColor">#FFFFFF</color>
+
+    <!-- Text Colors - LIGHT MODE -->
+    <color name="textPrimary">#212121</color>
+    <color name="textSecondary">#757575</color>
+    <color name="textHint">#9E9E9E</color>
+    <color name="textOnPrimary">#FFFFFF</color>
+
+    <!-- Basic Colors -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-
-    <!-- Text Colors -->
-    <color name="textHint">#9E9E9E</color>
 
     <!-- Status Colors -->
     <color name="statusLost">#F44336</color>
@@ -22,34 +36,27 @@
     <color name="statusPending">#FF9800</color>
 
     <!-- Status Background Colors -->
-
+    <color name="statusLostBackground">#FFEBEE</color>
+    <color name="statusFoundBackground">#E8F5E9</color>
+    <color name="statusResolvedBackground">#F5F5F5</color>
+    <color name="statusPendingBackground">#FFF3E0</color>
 
     <!-- Chip Colors -->
-    <color name="chipBackground">#E3F2FD</color>
+    <color name="chipBackground">#E8F5E9</color>
     <color name="chipBackgroundUnchecked">#F5F5F5</color>
-
-    <!-- Social Login Button Colors -->
-
 
     <!-- Other Colors -->
     <color name="lightGray">#F5F5F5</color>
-    <color name="lightBlue">#E3F2FD</color>
     <color name="divider">#E0E0E0</color>
     <color name="error">#F44336</color>
     <color name="success">#4CAF50</color>
-    <color name="primaryBlueDark">#1976D2</color>
-    <color name="statusResolvedBackground">#F5F5F5</color>
-    <!-- Add these if missing -->
-    <color name="primaryBlue">#2196F3</color>
-    <color name="statusPendingBackground">#FFF3E0</color>
-    <color name="statusLostBackground">#FFEBEE</color>
-    <color name="statusFoundBackground">#E8F5E9</color>
+
+    <!-- Social Login Colors -->
     <color name="googleRed">#DB4437</color>
     <color name="facebookBlue">#4267B2</color>
     <color name="twitterBlue">#1DA1F2</color>
-    <color name="accentBlue">#03A9F4</color>
-    <color name="backgroundColor">#F5F5F5</color>
-    <color name="cardBackground">#FFFFFF</color>
-    <color name="textPrimary">#212121</color>
-    <color name="textSecondary">#757575</color>
+
+    <!-- Header/Toolbar -->
+    <color name="toolbarBackground">#4CAF50</color>
+    <color name="statusBarColor">#2E7D32</color>
 </resources>

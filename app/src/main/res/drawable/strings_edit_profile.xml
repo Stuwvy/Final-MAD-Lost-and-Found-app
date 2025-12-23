@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ADD THESE STRINGS TO YOUR strings.xml -->
+<resources>
+    <!-- Edit Profile -->
+    <string name="display_name">Display Name</string>
+    <string name="phone_number">Phone Number (Optional)</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="email">Email</string>
+    <string name="profile_updated">Profile updated successfully!</string>
+</resources>

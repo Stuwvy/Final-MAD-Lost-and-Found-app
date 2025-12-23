@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- THIS FILE GOES IN: res/values-night/themes.xml -->
 <resources>
-    <!-- Base application theme - LIGHT MODE -->
+    <!-- Base application theme - DARK MODE -->
     <style name="Theme.Back2Me" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color (GREEN) -->
         <item name="colorPrimary">@color/primaryGreen</item>
@@ -12,31 +13,31 @@
         <item name="colorSecondaryVariant">@color/primaryGreenDark</item>
         <item name="colorOnSecondary">@android:color/white</item>
 
-        <!-- Background colors -->
+        <!-- Background colors - DARK -->
         <item name="android:colorBackground">@color/backgroundColor</item>
         <item name="colorSurface">@color/cardBackground</item>
         <item name="colorOnSurface">@color/textPrimary</item>
 
-        <!-- Status bar color -->
-        <item name="android:statusBarColor">@color/primaryGreenDark</item>
+        <!-- Status bar color - DARK -->
+        <item name="android:statusBarColor">@color/statusBarColor</item>
         <item name="android:navigationBarColor">@color/backgroundColor</item>
 
-        <!-- Text colors -->
+        <!-- Text colors - DARK -->
         <item name="android:textColorPrimary">@color/textPrimary</item>
         <item name="android:textColorSecondary">@color/textSecondary</item>
         <item name="android:textColorHint">@color/textHint</item>
 
-        <!-- Window background -->
+        <!-- Window background - DARK -->
         <item name="android:windowBackground">@color/backgroundColor</item>
 
         <!-- Error color -->
         <item name="colorError">@color/error</item>
     </style>
 
-    <!-- Splash Screen Theme -->
+    <!-- Splash Screen Theme - DARK -->
     <style name="Theme.Back2Me.Splash" parent="Theme.Back2Me">
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:statusBarColor">@color/primaryGreen</item>
+        <item name="android:statusBarColor">@color/primaryGreenDark</item>
     </style>
 
     <!-- Rounded corner style for images -->
@@ -45,7 +46,7 @@
         <item name="cornerSize">8dp</item>
     </style>
 
-    <!-- Card style -->
+    <!-- Card style - DARK -->
     <style name="CardStyle" parent="Widget.MaterialComponents.CardView">
         <item name="cardBackgroundColor">@color/cardBackground</item>
         <item name="cardCornerRadius">12dp</item>

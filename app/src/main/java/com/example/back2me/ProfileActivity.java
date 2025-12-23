@@ -1,12 +1,14 @@
 package com.example.back2me;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.example.back2me.auth.LoginActivity;
 import com.example.back2me.databinding.ActivityProfileBinding;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,6 +43,17 @@ public class ProfileActivity extends AppCompatActivity {
                 binding.textName.setText(name);
             } else if (email != null) {
                 binding.textName.setText(email.split("@")[0]);
+            }
+
+            // Load profile photo
+            Uri photoUrl = user.getPhotoUrl();
+            if (photoUrl != null) {
+                Glide.with(this)
+                        .load(photoUrl)
+                        .placeholder(R.drawable.ic_profile_circle)
+                        .error(R.drawable.ic_profile_circle)
+                        .circleCrop()
+                        .into(binding.imageProfile);
             }
         }
     }
@@ -144,6 +157,7 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        setupUI();  // Refresh profile data
         loadUserStats();
     }
 }

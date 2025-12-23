@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THIS FILE GOES IN: res/values-night/colors.xml -->
+<resources>
+    <!-- Primary Colors (GREEN - same in dark mode) -->
+    <color name="primaryGreen">#4CAF50</color>
+    <color name="primaryGreenDark">#2E7D32</color>
+    <color name="primaryGreenLight">#81C784</color>
+    <color name="accentGreen">#00C853</color>
+    <color name="darkGreen">#2E7D32</color>
+    <color name="lightGreen">#1B3D1E</color>
+
+    <!-- Legacy Blue (keep for compatibility) -->
+    <color name="primaryBlue">#4CAF50</color>
+    <color name="primaryBlueDark">#2E7D32</color>
+    <color name="accentBlue">#00C853</color>
+    <color name="lightBlue">#1A3A42</color>
+
+    <!-- Background Colors - DARK MODE -->
+    <color name="backgroundColor">#0E1D21</color>
+    <color name="cardBackground">#122E34</color>
+    <color name="surfaceColor">#1A3A42</color>
+
+    <!-- Text Colors - DARK MODE -->
+    <color name="textPrimary">#E0E0E0</color>
+    <color name="textSecondary">#ABAFB5</color>
+    <color name="textHint">#677E8A</color>
+    <color name="textOnPrimary">#FFFFFF</color>
+
+    <!-- Basic Colors -->
+    <color name="white">#122E34</color>
+    <color name="black">#E0E0E0</color>
+
+    <!-- Status Colors (same) -->
+    <color name="statusLost">#EF5350</color>
+    <color name="statusFound">#66BB6A</color>
+    <color name="statusResolved">#78909C</color>
+    <color name="statusPending">#FFA726</color>
+
+    <!-- Status Background Colors - DARK MODE -->
+    <color name="statusLostBackground">#3E2723</color>
+    <color name="statusFoundBackground">#1B3D1E</color>
+    <color name="statusResolvedBackground">#263238</color>
+    <color name="statusPendingBackground">#3E2723</color>
+
+    <!-- Chip Colors - DARK MODE -->
+    <color name="chipBackground">#1B3D1E</color>
+    <color name="chipBackgroundUnchecked">#263238</color>
+
+    <!-- Other Colors - DARK MODE -->
+    <color name="lightGray">#263238</color>
+    <color name="divider">#37474F</color>
+    <color name="error">#EF5350</color>
+    <color name="success">#66BB6A</color>
+
+    <!-- Social Login Colors -->
+    <color name="googleRed">#DB4437</color>
+    <color name="facebookBlue">#4267B2</color>
+    <color name="twitterBlue">#1DA1F2</color>
+
+    <!-- Header/Toolbar - DARK MODE -->
+    <color name="toolbarBackground">#122E34</color>
+    <color name="statusBarColor">#0E1D21</color>
+</resources>

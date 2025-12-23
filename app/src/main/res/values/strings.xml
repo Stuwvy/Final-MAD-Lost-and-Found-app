@@ -146,6 +146,13 @@
     <string name="view_claims">View Claims</string>
 
 
+    <string name="display_name">Display Name</string>
+    <string name="phone_number">Phone Number (Optional)</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="email">Email</string>
+    <string name="profile_updated">Profile updated successfully!</string>
+    <string name="display_name_required">Display name is required</string>
+
 
 
     <!-- ============================================== -->
