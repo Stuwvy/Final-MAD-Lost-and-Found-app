@@ -1,17 +1,18 @@
-// file: SignupActivity.java
 package com.example.back2me.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Patterns;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import com.example.back2me.AuthData;
+
 import com.example.back2me.MainActivity;
+import com.example.back2me.R;
 import com.example.back2me.databinding.ActivitySignupBinding;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 public class SignupActivity extends AppCompatActivity {
 
@@ -30,108 +31,84 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Back button
         binding.backButton.setOnClickListener(v -> finish());
 
-        binding.buttonSignup.setOnClickListener(v -> {
-            String email = binding.inputEmail.getText().toString().trim();
-            String password = binding.inputPassword.getText().toString().trim();
-            String confirmPassword = binding.inputConfirmPassword.getText().toString().trim();
+        // Sign up button
+        binding.buttonSignup.setOnClickListener(v -> attemptSignup());
 
-            if (validateInput(email, password, confirmPassword)) {
-                signupUser(email, password);
-            }
+        // Login link
+        binding.textLogin.setOnClickListener(v -> {
+            finish(); // Go back to login
         });
-
-        binding.textLogin.setOnClickListener(v -> finish());
-
-        // Social signup buttons (not implemented)
-        binding.buttonGoogle.setOnClickListener(v ->
-                Toast.makeText(this, "Google signup not implemented", Toast.LENGTH_SHORT).show()
-        );
-
-        binding.buttonFacebook.setOnClickListener(v ->
-                Toast.makeText(this, "Facebook signup not implemented", Toast.LENGTH_SHORT).show()
-        );
-
-        binding.buttonTwitter.setOnClickListener(v ->
-                Toast.makeText(this, "Twitter signup not implemented", Toast.LENGTH_SHORT).show()
-        );
     }
 
-    private boolean validateInput(String email, String password, String confirmPassword) {
-        if (email.isEmpty()) {
-            binding.inputEmail.setError("Please enter your email");
-            binding.inputEmail.requestFocus();
-            return false;
-        }
+    private void attemptSignup() {
+        String email = binding.inputEmail.getText().toString().trim();
+        String password = binding.inputPassword.getText().toString().trim();
+        String confirmPassword = binding.inputConfirmPassword.getText().toString().trim();
 
-        // Basic email validation
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            binding.inputEmail.setError("Please enter a valid email");
-            binding.inputEmail.requestFocus();
-            return false;
+        // Validate
+        if (TextUtils.isEmpty(email)) {
+            binding.layoutEmail.setError("Email is required");
+            return;
         }
+        binding.layoutEmail.setError(null);
 
-        if (password.isEmpty()) {
-            binding.inputPassword.setError("Please enter your password");
-            binding.inputPassword.requestFocus();
-            return false;
+        if (TextUtils.isEmpty(password)) {
+            binding.layoutPassword.setError("Password is required");
+            return;
         }
-
         if (password.length() < 6) {
-            binding.inputPassword.setError("Password must be at least 6 characters");
-            binding.inputPassword.requestFocus();
-            return false;
+            binding.layoutPassword.setError("Password must be at least 6 characters");
+            return;
         }
+        binding.layoutPassword.setError(null);
 
-        if (confirmPassword.isEmpty()) {
-            binding.inputConfirmPassword.setError("Please confirm your password");
-            binding.inputConfirmPassword.requestFocus();
-            return false;
+        if (TextUtils.isEmpty(confirmPassword)) {
+            binding.layoutConfirmPassword.setError("Please confirm your password");
+            return;
         }
-
         if (!password.equals(confirmPassword)) {
-            binding.inputConfirmPassword.setError("Passwords do not match");
-            binding.inputConfirmPassword.requestFocus();
-            return false;
+            binding.layoutConfirmPassword.setError("Passwords don't match");
+            return;
         }
+        binding.layoutConfirmPassword.setError(null);
 
-        return true;
-    }
+        // Show loading
+        setLoading(true);
 
-    private void signupUser(String email, String password) {
-        showLoading(true);
-
+        // Create account
         auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    showLoading(false);
+                .addOnSuccessListener(authResult -> {
+                    // Set display name from email
+                    String displayName = email.split("@")[0];
+                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                            .setDisplayName(displayName)
+                            .build();
 
-                    if (task.isSuccessful()) {
-                        // Get the Firebase User ID and save it
-                        FirebaseUser user = task.getResult().getUser();
-                        if (user != null) {
-                            AuthData.setUserId(user.getUid());
-                        }
+                    if (authResult.getUser() != null) {
+                        authResult.getUser().updateProfile(profileUpdates)
+                                .addOnCompleteListener(task -> {
+                                    setLoading(false);
+                                    Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
 
-                        Toast.makeText(this, "Account created successfully!", Toast.LENGTH_SHORT).show();
-                        navigateToMain();
-                    } else {
-                        String errorMessage = task.getException() != null ?
-                                task.getException().getMessage() : "Signup failed";
-                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                                    Intent intent = new Intent(this, MainActivity.class);
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                    startActivity(intent);
+                                    finish();
+                                });
                     }
+                })
+                .addOnFailureListener(e -> {
+                    setLoading(false);
+                    Toast.makeText(this, "Sign up failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
-    private void showLoading(boolean show) {
-        binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
-        binding.buttonSignup.setEnabled(!show);
-    }
-
-    private void navigateToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+    private void setLoading(boolean loading) {
+        binding.progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.buttonSignup.setEnabled(!loading);
+        binding.buttonSignup.setText(loading ? "" : getString(R.string.sign_up));
     }
 }

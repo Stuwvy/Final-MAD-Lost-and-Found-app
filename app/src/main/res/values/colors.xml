@@ -29,6 +29,13 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 
+    <!-- Message Bubble Colors - LIGHT MODE -->
+    <color name="receivedMessageBackground">#E8E8E8</color>
+    <color name="receivedMessageText">#212121</color>
+    <color name="receivedMessageTime">#757575</color>
+    <color name="sentMessageBackground">#4CAF50</color>
+    <color name="sentMessageText">#FFFFFF</color>
+
     <!-- Status Colors -->
     <color name="statusLost">#F44336</color>
     <color name="statusFound">#4CAF50</color>

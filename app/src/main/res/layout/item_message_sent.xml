@@ -1,45 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="end"
-    android:paddingVertical="4dp"
-    android:paddingHorizontal="8dp">
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
 
     <!-- Message Bubble -->
-    <LinearLayout
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@drawable/bg_message_sent"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
-        android:maxWidth="280dp">
+        android:layout_marginStart="60dp"
+        app:cardBackgroundColor="@color/primaryGreen"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="280dp">
 
-        <!-- Message Text -->
-        <TextView
-            android:id="@+id/text_message"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="@color/white"
-            android:lineSpacingExtra="2dp"
-            tools:text="Hey! I think I found your phone near the fountain." />
+            android:orientation="vertical"
+            android:padding="12dp">
 
-        <!-- Time -->
-        <TextView
-            android:id="@+id/text_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:textSize="11sp"
-            android:textColor="#B3FFFFFF"
-            tools:text="2:30 PM" />
+            <!-- Message Text -->
+            <TextView
+                android:id="@+id/text_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:lineSpacingExtra="2dp"
+                tools:text="Thanks! I'll pick it up tomorrow at 10am." />
 
-    </LinearLayout>
+            <!-- Time -->
+            <TextView
+                android:id="@+id/text_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:textColor="@android:color/white"
+                android:alpha="0.8"
+                android:textSize="11sp"
+                tools:text="2:32 PM" />
 
-</LinearLayout>
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

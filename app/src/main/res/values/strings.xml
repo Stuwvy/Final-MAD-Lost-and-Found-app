@@ -145,7 +145,9 @@
     <string name="contact_owner">Contact Owner</string>
     <string name="view_claims">View Claims</string>
 
-
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="send_reset_email">Send Reset Email</string>
     <string name="display_name">Display Name</string>
     <string name="phone_number">Phone Number (Optional)</string>
     <string name="save_changes">Save Changes</string>

@@ -12,9 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.back2me.databinding.ActivityConversationsBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ConversationsActivity extends AppCompatActivity implements ConversationsAdapter.OnConversationClickListener {
 
@@ -25,6 +28,7 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
     private List<Conversation> conversations = new ArrayList<>();
 
     private FirebaseAuth auth;
+    private FirebaseFirestore db;
     private String currentUserId;
 
     @Override
@@ -34,6 +38,7 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
         FirebaseUser user = auth.getCurrentUser();
 
         if (user == null) {
@@ -75,9 +80,9 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
 
                 conversations.clear();
                 conversations.addAll(conversationsList);
-                adapter.notifyDataSetChanged();
 
-                updateEmptyState();
+                // Look up real names for all conversations
+                lookupRealNames();
 
                 Log.d(TAG, "Loaded " + conversationsList.size() + " conversations");
             }
@@ -92,6 +97,108 @@ public class ConversationsActivity extends AppCompatActivity implements Conversa
                 updateEmptyState();
             }
         });
+    }
+
+    private void lookupRealNames() {
+        if (conversations.isEmpty()) {
+            updateEmptyState();
+            return;
+        }
+
+        final int[] pendingLookups = {conversations.size()};
+
+        for (Conversation conversation : conversations) {
+            String otherUserId = conversation.getOtherUserId(currentUserId);
+            String currentName = conversation.getOtherUserName(currentUserId);
+
+            // Skip if already has a good name (not "Item Owner" or "User")
+            if (currentName != null && !currentName.equals("Item Owner") && !currentName.equals("User") && !currentName.isEmpty()) {
+                pendingLookups[0]--;
+                if (pendingLookups[0] <= 0) {
+                    adapter.notifyDataSetChanged();
+                    updateEmptyState();
+                }
+                continue;
+            }
+
+            if (otherUserId != null && !otherUserId.isEmpty()) {
+                // First try users collection
+                db.collection("users").document(otherUserId)
+                        .get()
+                        .addOnSuccessListener(document -> {
+                            boolean foundName = false;
+                            if (document.exists()) {
+                                String displayName = document.getString("displayName");
+                                if (displayName != null && !displayName.isEmpty()) {
+                                    updateConversationName(conversation, otherUserId, displayName);
+                                    foundName = true;
+                                }
+                            }
+
+                            if (!foundName) {
+                                // Try to get name from messages
+                                lookupNameFromMessages(conversation, otherUserId, pendingLookups);
+                            } else {
+                                pendingLookups[0]--;
+                                if (pendingLookups[0] <= 0) {
+                                    adapter.notifyDataSetChanged();
+                                    updateEmptyState();
+                                }
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            // Try messages as fallback
+                            lookupNameFromMessages(conversation, otherUserId, pendingLookups);
+                        });
+            } else {
+                pendingLookups[0]--;
+                if (pendingLookups[0] <= 0) {
+                    adapter.notifyDataSetChanged();
+                    updateEmptyState();
+                }
+            }
+        }
+    }
+
+    private void lookupNameFromMessages(Conversation conversation, String otherUserId, int[] pendingLookups) {
+        db.collection("conversations")
+                .document(conversation.getId())
+                .collection("messages")
+                .whereEqualTo("senderId", otherUserId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                            String senderName = doc.getString("senderName");
+                            if (senderName != null && !senderName.isEmpty() && !senderName.equals("Item Owner")) {
+                                updateConversationName(conversation, otherUserId, senderName);
+                                break;
+                            }
+                        }
+                    }
+
+                    pendingLookups[0]--;
+                    if (pendingLookups[0] <= 0) {
+                        adapter.notifyDataSetChanged();
+                        updateEmptyState();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error looking up name from messages", e);
+                    pendingLookups[0]--;
+                    if (pendingLookups[0] <= 0) {
+                        adapter.notifyDataSetChanged();
+                        updateEmptyState();
+                    }
+                });
+    }
+
+    private void updateConversationName(Conversation conversation, String otherUserId, String name) {
+        Map<String, String> names = conversation.getParticipantNames();
+        if (names != null) {
+            names.put(otherUserId, name);
+        }
     }
 
     private void updateEmptyState() {

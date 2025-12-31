@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.back2me.databinding.ActivityChatBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class ChatActivity extends AppCompatActivity {
     private List<Message> messages = new ArrayList<>();
 
     private FirebaseAuth auth;
+    private FirebaseFirestore db;
     private String currentUserId;
     private String currentUserName;
     private String conversationId;
@@ -44,6 +46,7 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
         FirebaseUser currentUser = auth.getCurrentUser();
 
         if (currentUser == null) {
@@ -72,6 +75,73 @@ public class ChatActivity extends AppCompatActivity {
             setupUI();
             setupRecyclerView();
             startListeningToMessages();
+
+            // Look up real user name
+            lookupUserName();
+        }
+    }
+
+    private void lookupUserName() {
+        if (otherUserId == null || otherUserId.isEmpty()) return;
+
+        // First try users collection
+        db.collection("users").document(otherUserId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        String displayName = document.getString("displayName");
+                        if (displayName != null && !displayName.isEmpty()) {
+                            otherUserName = displayName;
+                            updateHeaderUI();
+                            return;
+                        }
+                    }
+                    // If not found in users, try to get from messages
+                    lookupNameFromMessages();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error looking up user", e);
+                    lookupNameFromMessages();
+                });
+    }
+
+    private void lookupNameFromMessages() {
+        if (conversationId == null || otherUserId == null) return;
+
+        // Get messages and find sender name for otherUserId
+        db.collection("conversations")
+                .document(conversationId)
+                .collection("messages")
+                .whereEqualTo("senderId", otherUserId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        String senderName = querySnapshot.getDocuments().get(0).getString("senderName");
+                        if (senderName != null && !senderName.isEmpty() && !senderName.equals("Item Owner")) {
+                            otherUserName = senderName;
+                            updateHeaderUI();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error looking up name from messages", e));
+    }
+
+    private void updateHeaderUI() {
+        binding.textUserName.setText(otherUserName != null ? otherUserName : "User");
+
+        // Update avatar initial
+        if (otherUserName != null && !otherUserName.isEmpty()) {
+            String initial;
+            // If it's an email, get first letter before @
+            if (otherUserName.contains("@")) {
+                initial = otherUserName.substring(0, 1).toUpperCase();
+            } else {
+                initial = String.valueOf(otherUserName.charAt(0)).toUpperCase();
+            }
+            binding.textAvatar.setText(initial);
+        } else {
+            binding.textAvatar.setText("U");
         }
     }
 
@@ -84,6 +154,22 @@ public class ChatActivity extends AppCompatActivity {
 
         binding.progressBar.setVisibility(View.VISIBLE);
 
+        // Look up real name before creating conversation
+        db.collection("users").document(otherUserId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        String displayName = document.getString("displayName");
+                        if (displayName != null && !displayName.isEmpty()) {
+                            otherUserName = displayName;
+                        }
+                    }
+                    doCreateConversation();
+                })
+                .addOnFailureListener(e -> doCreateConversation());
+    }
+
+    private void doCreateConversation() {
         ChatRepository.getOrCreateConversation(
                 currentUserId, currentUserName,
                 otherUserId, otherUserName != null ? otherUserName : "User",
@@ -191,6 +277,21 @@ public class ChatActivity extends AppCompatActivity {
                         // Scroll to bottom
                         if (!messages.isEmpty()) {
                             binding.recyclerMessages.scrollToPosition(messages.size() - 1);
+                        }
+
+                        // Try to get other user's name from messages if not found yet
+                        if ((otherUserName == null || otherUserName.equals("Item Owner") || otherUserName.equals("User"))
+                                && otherUserId != null) {
+                            for (Message msg : messagesList) {
+                                if (otherUserId.equals(msg.getSenderId())) {
+                                    String name = msg.getSenderName();
+                                    if (name != null && !name.isEmpty() && !name.equals("Item Owner")) {
+                                        otherUserName = name;
+                                        updateHeaderUI();
+                                        break;
+                                    }
+                                }
+                            }
                         }
 
                         updateEmptyState();

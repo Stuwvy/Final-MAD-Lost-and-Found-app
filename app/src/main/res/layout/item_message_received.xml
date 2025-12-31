@@ -1,59 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="start"
-    android:paddingVertical="4dp"
-    android:paddingHorizontal="8dp">
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
 
-    <!-- Sender Name (shown when sender changes) -->
+    <!-- Sender Name (for received messages) -->
     <TextView
         android:id="@+id/text_sender_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
         android:layout_marginBottom="4dp"
-        android:layout_marginStart="12dp"
+        android:textColor="@color/primaryGreen"
         android:textSize="12sp"
         android:textStyle="bold"
-        android:textColor="@color/primaryBlue"
-        android:visibility="gone"
-        tools:text="John Doe"
-        tools:visibility="visible" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="John Doe" />
 
     <!-- Message Bubble -->
-    <LinearLayout
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@drawable/bg_message_received"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
-        android:maxWidth="280dp">
+        android:layout_marginEnd="60dp"
+        app:cardBackgroundColor="@color/receivedMessageBackground"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_sender_name"
+        app:layout_constraintWidth_max="280dp">
 
-        <!-- Message Text -->
-        <TextView
-            android:id="@+id/text_message"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="@color/textPrimary"
-            android:lineSpacingExtra="2dp"
-            tools:text="That's great! Can we meet somewhere to verify?" />
+            android:orientation="vertical"
+            android:padding="12dp">
 
-        <!-- Time -->
-        <TextView
-            android:id="@+id/text_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="4dp"
-            android:textSize="11sp"
-            android:textColor="#999999"
-            tools:text="2:32 PM" />
+            <!-- Message Text -->
+            <TextView
+                android:id="@+id/text_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/receivedMessageText"
+                android:textSize="15sp"
+                android:lineSpacingExtra="2dp"
+                tools:text="Hey! I found your phone at the coffee shop." />
 
-    </LinearLayout>
+            <!-- Time -->
+            <TextView
+                android:id="@+id/text_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/receivedMessageTime"
+                android:textSize="11sp"
+                tools:text="2:30 PM" />
 
-</LinearLayout>
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

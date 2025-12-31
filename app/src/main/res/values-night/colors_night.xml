@@ -20,15 +20,22 @@
     <color name="cardBackground">#122E34</color>
     <color name="surfaceColor">#1A3A42</color>
 
-    <!-- Text Colors - DARK MODE -->
-    <color name="textPrimary">#E0E0E0</color>
-    <color name="textSecondary">#ABAFB5</color>
-    <color name="textHint">#677E8A</color>
+    <!-- Text Colors - DARK MODE (IMPROVED for readability) -->
+    <color name="textPrimary">#FFFFFF</color>
+    <color name="textSecondary">#B0BEC5</color>
+    <color name="textHint">#78909C</color>
     <color name="textOnPrimary">#FFFFFF</color>
 
     <!-- Basic Colors -->
     <color name="white">#122E34</color>
-    <color name="black">#E0E0E0</color>
+    <color name="black">#FFFFFF</color>
+
+    <!-- Message Bubble Colors - DARK MODE (HIGH CONTRAST) -->
+    <color name="receivedMessageBackground">#1E3A40</color>
+    <color name="receivedMessageText">#FFFFFF</color>
+    <color name="receivedMessageTime">#B0BEC5</color>
+    <color name="sentMessageBackground">#2E7D32</color>
+    <color name="sentMessageText">#FFFFFF</color>
 
     <!-- Status Colors (same) -->
     <color name="statusLost">#EF5350</color>
